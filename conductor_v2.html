@@ -966,44 +966,52 @@ function mostrarGuardando(msg) {
 
 // ── ENVÍO REAL A SHEETS ────────────────────────────────────────
 async function enviar() {
-  const totalDesvios = eDesvios + rDesvios; const hasDesvio = totalDesvios > 0;
+  var totalDesvios = (eDesvios || 0) + (rDesvios || 0);
+  var hasDesvio = totalDesvios > 0;
   mostrarGuardando("Guardando acta...");
-  const data = CONDUCTORES[conductor] || {};
-  const resultado = await apiCall("guardarActa", {
+  var data = CONDUCTORES[conductor] || {};
+  var kmEl = document.querySelector('#e-km') || document.querySelector('.inp[type="number"]');
+  var combEl = document.querySelector('#e-fuel-opts .fuel-opt.on') || document.querySelector('.fuel-opt.on');
+  var obsEl = document.querySelector('#s-e-paso2 .obs-ta') || document.querySelector('.obs-ta');
+  var resultado = await apiCall("guardarActa", {
     tipo: "Entrega",
     patente: data.plate || "",
-    departamento: (data.model || "").split("·").pop().trim(),
+    departamento: (data.model || "").split(".").pop().trim(),
     conductorSaliente: conductor,
     conductorEntrante: conductor,
-    turnoEntrante: data.turno || "Día",
-    kmFin: document.querySelector('.finp[type="number"]')?.value || "",
-    combustible: document.querySelector('.fuel-opt.on')?.textContent || "",
+    turnoEntrante: data.turno || "Dia",
+    kmFin: kmEl ? kmEl.value : "",
+    combustible: combEl ? combEl.textContent.trim() : "",
     desvios: totalDesvios,
-    observaciones: document.querySelector('.obs-ta')?.value || "SIN NOVEDAD",
-    firmaConductor: "Firmado digitalmente"
+    observaciones: obsEl ? obsEl.value : "SIN NOVEDAD",
+    firmaConductor: "Firmado digitalmente",
+    fotos: ePhotos ? ePhotos.size : 0
   });
   if (hasDesvio && resultado.ok) {
     await apiCall("guardarDesvio", {
       patente: data.plate || "",
-      departamento: (data.model || "").split("·").pop().trim(),
+      departamento: (data.model || "").split(".").pop().trim(),
       conductor: conductor,
       tipo: "Checklist entrega",
-      descripcion: "Desvíos detectados en checklist de entrega",
+      descripcion: "Desvios detectados en checklist de entrega",
       nivel: "medio",
-      turno: data.turno || "Día"
+      turno: data.turno || "Dia"
     });
   }
-  document.getElementById('desvio-notice').style.display = hasDesvio ? '' : 'none';
-  document.getElementById('succ-msg').textContent = hasDesvio
-    ? 'Acta enviada. Se detectaron desvíos — el mecánico fue notificado.'
-    : 'Acta guardada correctamente. Sin desvíos detectados.';
-  document.getElementById('succ-detail').innerHTML =
-    `${data.plate || 'CD-3301'} · ${(data.model||'').split('·')[0].trim()}<br>` +
-    `Turno ${data.turno||'día'} · Desvíos: ${totalDesvios}<br>` +
-    `Fotos: ${photoDone.size} · Guardado en Drive`;
+  var noticeEl = document.getElementById('desvio-notice');
+  if (noticeEl) noticeEl.style.display = hasDesvio ? '' : 'none';
+  var msgEl = document.getElementById('succ-msg');
+  if (msgEl) msgEl.textContent = hasDesvio
+    ? 'Acta enviada. Se detectaron desvios, el mecanico fue notificado.'
+    : 'Acta guardada correctamente. Sin desvios detectados.';
+  var detEl = document.getElementById('succ-detail');
+  if (detEl) detEl.innerHTML =
+    (data.plate || '') + ' ' + ((data.model||'').split('.')[0].trim()) + '<br>' +
+    'Turno ' + (data.turno||'dia') + ' Desvios: ' + totalDesvios + '<br>' +
+    'Fotos: ' + (ePhotos ? ePhotos.size : 0) + ' Guardado en Drive';
   goS('s-exito');
   eDesvios = 0; rDesvios = 0;
-  mostrarGuardando("✓ Acta guardada en Drive");
+  mostrarGuardando("Acta guardada en Drive");
 }
 
 async function enviarFalla() {
