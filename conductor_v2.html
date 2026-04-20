@@ -966,7 +966,7 @@ function mostrarGuardando(msg) {
 
 // ── ENVÍO REAL A SHEETS ────────────────────────────────────────
 async function enviar() {
-  const hasDesvio = desvios > 0;
+  const totalDesvios = eDesvios + rDesvios; const hasDesvio = totalDesvios > 0;
   mostrarGuardando("Guardando acta...");
   const data = CONDUCTORES[conductor] || {};
   const resultado = await apiCall("guardarActa", {
@@ -978,7 +978,7 @@ async function enviar() {
     turnoEntrante: data.turno || "Día",
     kmFin: document.querySelector('.finp[type="number"]')?.value || "",
     combustible: document.querySelector('.fuel-opt.on')?.textContent || "",
-    desvios: desvios,
+    desvios: totalDesvios,
     observaciones: document.querySelector('.obs-ta')?.value || "SIN NOVEDAD",
     firmaConductor: "Firmado digitalmente"
   });
@@ -999,10 +999,10 @@ async function enviar() {
     : 'Acta guardada correctamente. Sin desvíos detectados.';
   document.getElementById('succ-detail').innerHTML =
     `${data.plate || 'CD-3301'} · ${(data.model||'').split('·')[0].trim()}<br>` +
-    `Turno ${data.turno||'día'} · Desvíos: ${desvios}<br>` +
+    `Turno ${data.turno||'día'} · Desvíos: ${totalDesvios}<br>` +
     `Fotos: ${photoDone.size} · Guardado en Drive`;
   goS('s-exito');
-  desvios = 0;
+  eDesvios = 0; rDesvios = 0;
   mostrarGuardando("✓ Acta guardada en Drive");
 }
 
