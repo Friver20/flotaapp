@@ -800,8 +800,8 @@ function buildFleet(list){
         ? '<div style="font-size:12px;color:var(--mec);margin-top:4px;font-weight:500">✓ '+v.conductor+' · Turno '+v.turno+'</div>'
         : '<div style="font-size:12px;color:var(--text3);margin-top:4px">Sin conductor asignado</div>';
       const otR=v.ot?`<div style="font-size:11px;color:var(--ot);margin-top:4px;font-family:'DM Mono',monospace">${v.ot}</div>`:'';
-      // Assign button — only for available/desvio vehicles
-      const canAssign = v.estado!=='taller' && v.estado!=='bloqueada';
+      // Assign button — only when no conductor assigned and not in taller/blocked
+      const canAssign = !v.conductor && v.estado!=='taller' && v.estado!=='bloqueada';
       const assignBtn = canAssign ? `
         <div style="display:flex;gap:6px;margin-top:10px;align-items:center">
           <select id="sel-cond-${v.plate}" style="flex:1;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;background:var(--bg3);color:var(--text);appearance:none" onchange="this.nextElementSibling.style.opacity=this.value?'1':'0.5'">
