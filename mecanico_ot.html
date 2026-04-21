@@ -551,13 +551,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 </div>
 
 <script>
-const DESVIOS=[
-  {id:1,plate:'AB-5512',model:'Toyota Hilux 2022',dept:'Operaciones',conductor:'Juan Martínez',turno:'noche',tipo:'Seguridad',item:'Extintor sin carga vigente',detalle:'Precinto roto, manómetro en zona roja',nivel:'critico',hora:'07:58'},
-  {id:2,plate:'AB-5512',model:'Toyota Hilux 2022',dept:'Operaciones',conductor:'Juan Martínez',turno:'noche',tipo:'Mecánico',item:'Ruido al frenar (lado derecho)',detalle:'Ruido metálico en curvas y frenada',nivel:'critico',hora:'07:58'},
-  {id:3,plate:'KL-2231',model:'Toyota Hilux 2020',dept:'Operaciones',conductor:'María González',turno:'noche',tipo:'Documentación',item:'Revisión técnica por vencer',detalle:'Vence en 8 días',nivel:'medio',hora:'08:05'},
-  {id:4,plate:'EF-7720',model:'Nissan Navara 2021',dept:'Operaciones',conductor:'Ana Rojas',turno:'dia',tipo:'Inventario',item:'Triángulo reflectante faltante',detalle:'Solo hay uno, deben ser dos',nivel:'critico',hora:'08:12'},
-  {id:5,plate:'ST-9910',model:'Toyota RAV4 2023',dept:'Prevención',conductor:'Claudia Muñoz',turno:'dia',tipo:'Carrocería',item:'Rayón puerta trasera izquierda',detalle:'Rayón ~15cm, no existía ayer',nivel:'medio',hora:'08:20'},
-];
+const DESVIOS = []; // Se carga desde el Sheet
 const OTS=[
   {num:'OT-2024-006',plate:'GH-1180',model:'Toyota Hilux 2021',dept:'Operaciones',tipo:'programada',desc:'Cambio aceite motor + filtros',taller:'Taller propio',fecha:'14/04/2024',prio:'media',estado:'lista',km:'22.100',desvio:null},
   {num:'OT-2024-005',plate:'AB-5512',model:'Toyota Hilux 2022',dept:'Operaciones',tipo:'correctiva',desc:'Reposición extintor + kit seguridad',taller:'Taller propio',fecha:'14/04/2024',prio:'alta',estado:'abierta',km:'87.430',desvio:'Extintor sin carga'},
@@ -1178,11 +1172,12 @@ async function cargarDatosReales() {
     apiCall("getOTs")
   ]);
   
-  // Cargar desvios reales del Sheet
+  // Cargar desvios reales del Sheet — siempre reemplazar demo
+  DESVIOS.length = 0;
   if (desviosRes.ok && desviosRes.data.length > 0) {
     const desviosReales = desviosRes.data
-      .filter(d => d.EstadoMecanico === 'Pendiente')
-      .map((d, idx) => ({
+      .filter(function(d) { return d.EstadoMecanico === 'Pendiente'; })
+      .map(function(d, idx) { return {
         id: idx + 100,
         plate: d.Patente || '',
         model: d.Departamento || '',
@@ -1194,20 +1189,17 @@ async function cargarDatosReales() {
         detalle: 'Reportado por ' + (d.Conductor||'conductor') + ' · ' + (d.Timestamp||''),
         nivel: (d.Nivel || 'medio').toLowerCase(),
         hora: d.Timestamp || ''
-      }));
-    if (desviosReales.length > 0) {
-      // Replace demo desvios with real ones
-      DESVIOS.length = 0;
-      desviosReales.forEach(d => DESVIOS.push(d));
-      buildDesvios(DESVIOS);
-      // Update badge
-      const badge = document.getElementById('nb-dev')?.querySelector('.nb-badge');
-      if (badge) { badge.textContent = DESVIOS.length; badge.style.display = 'flex'; }
-      mostrarGuardando(DESVIOS.length + ' desvios pendientes');
-    } else {
-      mostrarGuardando('Sin desvios pendientes');
-    }
+      };});
+    desviosReales.forEach(function(d) { DESVIOS.push(d); });
   }
+  buildDesvios(DESVIOS);
+  // Update badge
+  var badge = document.querySelector('#nb-dev .nb-badge');
+  if (badge) {
+    if (DESVIOS.length > 0) { badge.textContent = DESVIOS.length; badge.style.display = 'flex'; }
+    else { badge.style.display = 'none'; }
+  }
+  mostrarGuardando(DESVIOS.length > 0 ? DESVIOS.length + ' desvios pendientes' : 'Sin desvios pendientes');
   // Actualizar métricas con datos reales
   if (flota.ok && flota.data.length > 0) {
     var flotaReal = flota.data.map(function(v) {
