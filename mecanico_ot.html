@@ -913,7 +913,7 @@ function buildPhotos(gridId, labels, prefix, cntId, total) {
         iconDiv.innerHTML = '<img src="'+ev.target.result+'" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:9px">';
         lblEl.style.cssText = 'position:absolute;bottom:4px;left:0;right:0;font-size:9px;color:#fff;text-align:center;background:rgba(0,0,0,0.5);padding:2px 4px;z-index:1';
         // Count the photo
-        var set = prefix === 'r' ? rPhotos : ePhotos;
+        var photoSet = window['_photos_'+gridId] || new Set(); window['_photos_'+gridId] = photoSet; var set = photoSet;
         set.add(slotIdx);
         if (cntId) document.getElementById(cntId).textContent = set.size + '/' + total;
         // Upload to Drive
@@ -989,7 +989,8 @@ function mostrarGuardando(msg) {
 
 // ── ENVÍO REAL A SHEETS ────────────────────────────────────────
 async function crearOTyValidar() {
-  const d = DESVIOS.find(x => x.id === currentDesvioId) || {};
+  if (curDev == null) { mostrarGuardando('Error: selecciona un desvio primero'); return; }
+  const d = DESVIOS.find(x => x.id === curDev) || {};
   mostrarGuardando("Creando OT y validando...");
   const otRes = await apiCall("crearOT", {
     patente: d.plate || "",
@@ -1021,7 +1022,8 @@ async function crearOTyValidar() {
 }
 
 async function cerrarValidacion() {
-  const d = DESVIOS.find(x => x.id === currentDesvioId) || {};
+  if (curDev == null) { mostrarGuardando('Error: selecciona un desvio primero'); return; }
+  const d = DESVIOS.find(x => x.id === curDev) || {};
   mostrarGuardando("Validando desvío...");
   await apiCall("validarDesvio", {
     patente: d.plate || "",
