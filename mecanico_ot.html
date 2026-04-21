@@ -1111,12 +1111,44 @@ async function cerrarOTReal() {
 
 // Cargar datos reales al iniciar
 async function cargarDatosReales() {
+  mostrarGuardando('Cargando datos...');
   const [flota, conductores, desviosRes, otsRes] = await Promise.all([
     apiCall("getFlota"),
     apiCall("getConductores"),
     apiCall("getDesvios"),
     apiCall("getOTs")
   ]);
+  
+  // Cargar desvios reales del Sheet
+  if (desviosRes.ok && desviosRes.data.length > 0) {
+    const desviosReales = desviosRes.data
+      .filter(d => d.EstadoMecanico === 'Pendiente')
+      .map((d, idx) => ({
+        id: idx + 100,
+        plate: d.Patente || '',
+        model: '',
+        dept: d.Departamento || 'Operaciones',
+        conductor: d.Conductor || '',
+        turno: d.Turno || '',
+        tipo: d.TipoDesvio || '',
+        item: d.Descripcion || '',
+        detalle: d.Descripcion || '',
+        nivel: d.Nivel || 'medio',
+        hora: d.Timestamp || ''
+      }));
+    if (desviosReales.length > 0) {
+      // Replace demo desvios with real ones
+      DESVIOS.length = 0;
+      desviosReales.forEach(d => DESVIOS.push(d));
+      buildDesvios(DESVIOS);
+      // Update badge
+      const badge = document.getElementById('nb-dev')?.querySelector('.nb-badge');
+      if (badge) { badge.textContent = DESVIOS.length; badge.style.display = 'flex'; }
+      mostrarGuardando(DESVIOS.length + ' desvios pendientes');
+    } else {
+      mostrarGuardando('Sin desvios pendientes');
+    }
+  }
   // Actualizar métricas con datos reales
   if (flota.ok && flota.data.length > 0) {
     buildFleet(flota.data.map(v => ({
