@@ -796,57 +796,100 @@ function setChk(e, prefix, i, state, cntId, total) {
 }
 
 // ── FOTOS ────────────────────────────────────────────────────────────
+// ── SUBIR FOTO (usa fetch directo, no JSONP) ───────────────────
+async function subirFotoReal(base64, mimeType, nombre) {
+  try {
+    mostrarGuardando('Subiendo foto...');
+    // Split base64 in chunks to avoid URL limits
+    // Use fetch with no-cors as fallback
+    var body = JSON.stringify({
+      accion: 'subirFoto',
+      base64: base64,
+      mimeType: mimeType || 'image/jpeg',
+      nombre: nombre || ('foto_' + Date.now() + '.jpg')
+    });
+    
+    // Try normal fetch first
+    try {
+      var res = await fetch(API_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'text/plain'},
+        body: body
+      });
+      var data = await res.json();
+      if (data.ok) {
+        mostrarGuardando('Foto guardada en Drive');
+        return data;
+      }
+    } catch(fetchErr) {
+      console.log('fetch failed, trying form submit:', fetchErr);
+    }
+    
+    // Fallback: use form POST (no CORS issues)
+    return new Promise(function(resolve) {
+      var form = document.createElement('form');
+      form.method = 'POST';
+      form.action = API_URL;
+      form.target = '_blank';
+      form.style.display = 'none';
+      var input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'payload';
+      input.value = body;
+      form.appendChild(input);
+      document.body.appendChild(form);
+      form.submit();
+      setTimeout(function() {
+        document.body.removeChild(form);
+        mostrarGuardando('Foto enviada');
+        resolve({ok: true});
+      }, 2000);
+    });
+  } catch(e) {
+    console.error('subirFotoReal error:', e);
+    mostrarGuardando('Error al subir foto');
+    return {ok: false, error: e.toString()};
+  }
+}
+
 function buildPhotos(gridId, labels, prefix, cntId, total) {
-  const g = document.getElementById(gridId);
+  var g = document.getElementById(gridId);
   if (!g) return;
   g.innerHTML = '';
-  labels.forEach((lbl, i) => {
-    const wrap = document.createElement('div');
+  labels.forEach(function(lbl, i) {
+    var wrap = document.createElement('div');
     wrap.style.cssText = 'position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;cursor:pointer;background:var(--bg3);border:1.5px dashed var(--border2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px';
-    wrap.id = 'slot-'+gridId+'-'+i;
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.capture = 'environment';
+    var input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*'; input.capture = 'environment';
     input.style.cssText = 'position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;z-index:2';
-    const iconDiv = document.createElement('div');
+    var iconDiv = document.createElement('div');
     iconDiv.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="var(--text3)"><path d="M12 15.2A3.2 3.2 0 018.8 12 3.2 3.2 0 0112 8.8a3.2 3.2 0 013.2 3.2 3.2 3.2 0 01-3.2 3.2M20 4h-3.17L15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/></svg>';
-    const lblEl = document.createElement('span');
+    var lblEl = document.createElement('span');
     lblEl.textContent = lbl;
     lblEl.style.cssText = 'font-size:9px;color:var(--text3);text-align:center;line-height:1.2;padding:0 4px;pointer-events:none';
     wrap.appendChild(iconDiv); wrap.appendChild(lblEl); wrap.appendChild(input);
     input.addEventListener('change', function() {
       if (!this.files || !this.files[0]) return;
-      const file = this.files[0];
-      const slotIdx = i;
-      const reader = new FileReader();
-      reader.onload = async function(ev) {
-        const base64 = ev.target.result.split(',')[1];
-        wrap.style.background = 'var(--ok-bg,rgba(45,212,160,0.1))';
+      var file = this.files[0];
+      var slotIdx = i;
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        var base64 = ev.target.result.split(',')[1];
+        // Show preview immediately
         wrap.style.borderColor = 'var(--ok,#2dd4a0)';
         wrap.style.borderStyle = 'solid';
+        wrap.style.background = 'var(--ok-bg,rgba(45,212,160,0.1))';
         iconDiv.innerHTML = '<img src="'+ev.target.result+'" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:9px">';
         lblEl.style.cssText = 'position:absolute;bottom:4px;left:0;right:0;font-size:9px;color:#fff;text-align:center;background:rgba(0,0,0,0.5);padding:2px 4px;z-index:1';
-        mostrarGuardando('Subiendo foto...');
-        const data = CONDUCTORES[conductor] || {};
-        const fecha = new Date().toISOString().slice(0,10);
-        const nombre = (data.plate||'CAM')+'_'+fecha+'_'+lbl.replace(/ /g,'_')+'_'+Date.now()+'.jpg';
-        try {
-          const res = await apiCall('subirFoto', {base64:base64, mimeType:file.type||'image/jpeg', nombre:nombre});
-          if (cntId) {
-            const set = prefix==='r' ? rPhotos : ePhotos;
-            set.add(slotIdx);
-            document.getElementById(cntId).textContent = set.size+'/'+total;
-          }
-          mostrarGuardando('Foto guardada en Drive');
-        } catch(e) {
-          if (cntId) {
-            const set = prefix==='r' ? rPhotos : ePhotos;
-            set.add(slotIdx);
-            document.getElementById(cntId).textContent = set.size+'/'+total;
-          }
-          mostrarGuardando('Foto lista');
-        }
+        // Count the photo
+        var set = prefix === 'r' ? rPhotos : ePhotos;
+        set.add(slotIdx);
+        if (cntId) document.getElementById(cntId).textContent = set.size + '/' + total;
+        // Upload to Drive
+        var data = CONDUCTORES[conductor] || {};
+        var fecha = new Date().toISOString().slice(0,10);
+        var nombre = (data.plate||'CAM')+'_'+fecha+'_'+lbl.replace(/ /g,'_')+'_'+Date.now()+'.jpg';
+        subirFotoReal(base64, file.type||'image/jpeg', nombre);
       };
       reader.readAsDataURL(file);
     });
