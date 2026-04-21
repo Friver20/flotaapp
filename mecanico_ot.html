@@ -842,8 +842,9 @@ async function asignarConductorDia(plate) {
     // Update local fleet data immediately
     const v = FLEET.find(x=>x.plate===plate);
     if (v) { v.conductor=conductor; v.turno='dia'; v.estado='ok'; }
-    // Rebuild fleet to reflect change
-    buildFleet(FLEET);
+    // Force clear and rebuild
+    document.getElementById('fleet-list').innerHTML = '';
+    setTimeout(function() { buildFleet(FLEET); }, 50);
     mostrarGuardando('✓ '+conductor+' asignado a '+plate);
   } else {
     mostrarGuardando('Error: '+(res.error||''));
