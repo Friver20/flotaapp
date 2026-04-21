@@ -275,9 +275,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     <div class="met"><div class="mv" style="color:var(--green)">1</div><div class="ml">Listas</div></div>
     <div class="met"><div class="mv">8</div><div class="ml">Este mes</div></div>
   </div>
-  <div class="km-alert">
-    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-    <div style="font-size:12px;color:var(--ot);line-height:1.4"><b>2 camionetas cerca del umbral de mantención programada</b><br>AB-5512 · 87.430 km (prox. 90.000) &nbsp;·&nbsp; KL-2231 · 99.310 km (prox. 100.000)</div>
+  <div id="km-alerts-container"></div>
   </div>
   <div class="filter-row">
     <button class="fbtn on" onclick="filterOT(this,'todas')">Todas</button>
@@ -1241,7 +1239,34 @@ async function cargarDatosReales() {
     buildFleet(FLEET);
   }
 }
-window.addEventListener('load', cargarDatosReales);
+
+async function cargarAlertasMantencion() {
+  const res = await apiCall('getAlertas');
+  const container = document.getElementById('km-alerts-container');
+  if (!container) return;
+  container.innerHTML = '';
+  if (!res.ok || !res.data || res.data.length === 0) return;
+  
+  res.data.forEach(function(a) {
+    const div = document.createElement('div');
+    div.className = 'km-alert';
+    div.style.borderColor = a.urgencia === 'vencida' ? 'rgba(239,68,68,0.4)' : 
+                            a.urgencia === 'critica' ? 'rgba(239,68,68,0.3)' : 'rgba(249,115,22,0.3)';
+    div.style.background = a.urgencia === 'vencida' ? 'var(--red-bg)' : 'var(--ot-bg)';
+    const color = a.urgencia === 'vencida' ? 'var(--red)' : 'var(--ot)';
+    const msg = a.urgencia === 'vencida' 
+      ? 'VENCIDA · ' + Math.abs(a.diferencia).toLocaleString() + ' km sobre el límite'
+      : 'Próximo servicio en ' + a.diferencia.toLocaleString() + ' km';
+    div.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:'+color+';flex-shrink:0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>' +
+      '<div style="font-size:12px;color:'+color+';line-height:1.4">' +
+      '<b>' + a.patente + ' · ' + a.marca + ' ' + a.modelo + '</b><br>' +
+      msg + ' · Km actual: ' + a.kmActual.toLocaleString() + ' · Próximo: ' + a.kmProximo.toLocaleString() +
+      '</div>';
+    container.appendChild(div);
+  });
+}
+
+window.addEventListener('load', function() { cargarDatosReales(); cargarAlertasMantencion(); });
 
 </script>
 </body>

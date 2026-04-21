@@ -475,13 +475,14 @@ async function cargarDatos() {
   toast('Actualizando datos...');
 
   try {
-    var [flota, conductores, supervisores, desvios, ots, actas] = await Promise.all([
+    var [flota, conductores, supervisores, desvios, ots, actas, alertas] = await Promise.all([
       apiCall('getFlota'),
       apiCall('getConductores'),
       apiCall('getSupervisores'),
       apiCall('getDesvios'),
       apiCall('getOTs'),
-      apiCall('getActas')
+      apiCall('getActas'),
+      apiCall('getAlertas')
     ]);
 
     // FLOTA
@@ -539,6 +540,28 @@ async function cargarDatos() {
       }
     }
 
+    // Alertas de mantención
+    if (alertas && alertas.ok && alertas.data && alertas.data.length > 0) {
+      var alSection = document.getElementById('alertas-list');
+      var mantencionCards = alertas.data.map(function(a) {
+        var color = a.urgencia === 'vencida' ? 'var(--red)' : a.urgencia === 'critica' ? 'var(--red)' : 'var(--ot)';
+        var msg = a.urgencia === 'vencida'
+          ? 'MANTENCIÓN VENCIDA · ' + Math.abs(a.diferencia).toLocaleString() + ' km sobre el límite'
+          : 'Mantención en ' + a.diferencia.toLocaleString() + ' km';
+        return '<div class="alert-card ' + (a.urgencia !== 'proxima' ? 'critica' : 'media') + '">' +
+          '<div class="alert-dot" style="background:'+color+'"></div>' +
+          '<div class="alert-content">' +
+            '<div class="alert-title">' + a.patente + ' · ' + a.marca + ' ' + a.modelo + '</div>' +
+            '<div class="alert-desc">' + msg + '</div>' +
+            '<div class="alert-time">Km actual: ' + a.kmActual.toLocaleString() + ' · Próximo servicio: ' + a.kmProximo.toLocaleString() + '</div>' +
+          '</div>' +
+          '<span class="badge ' + (a.urgencia !== 'proxima' ? 'badge-red' : 'badge-amber') + '">' + 
+          (a.urgencia === 'vencida' ? 'Vencida' : a.urgencia === 'critica' ? 'Crítica' : 'Próxima') + '</span>' +
+          '</div>';
+      }).join('');
+      if (alSection) alSection.innerHTML = mantencionCards + (alSection.innerHTML || '');
+    }
+
     // OTs
     if (ots.ok) {
       var abiertas = ots.data.filter(function(o) { return o.Estado === 'Abierta' || o.Estado === 'En taller'; });
@@ -587,6 +610,8 @@ const SCHEMAS = {
       {key:'Departamento', label:'Departamento', type:'select', options:['Operaciones','Expeditoría','Prevención','Administración']},
       {key:'Estado', label:'Estado', type:'select', options:['Activa','En taller','Bloqueada','Baja']},
       {key:'KmActual', label:'Km actuales', type:'number', placeholder:'Ej: 54210'},
+      {key:'KmProximaMantencion', label:'Km próxima mantención', type:'number', placeholder:'Ej: 140000'},
+      {key:'KmAlertaMantencion', label:'Alertar cuando falten (km)', type:'number', placeholder:'Ej: 500'},
     ]
   },
   conductores: {
