@@ -1126,14 +1126,14 @@ async function cargarDatosReales() {
       .map((d, idx) => ({
         id: idx + 100,
         plate: d.Patente || '',
-        model: '',
+        model: d.Departamento || '',
         dept: d.Departamento || 'Operaciones',
         conductor: d.Conductor || '',
         turno: d.Turno || '',
-        tipo: d.TipoDesvio || '',
-        item: d.Descripcion || '',
-        detalle: d.Descripcion || '',
-        nivel: d.Nivel || 'medio',
+        tipo: d.TipoDesvio || 'Checklist',
+        item: d.Descripcion || d.TipoDesvio || 'Sin descripcion',
+        detalle: 'Reportado por ' + (d.Conductor||'conductor') + ' · ' + (d.Timestamp||''),
+        nivel: (d.Nivel || 'medio').toLowerCase(),
         hora: d.Timestamp || ''
       }));
     if (desviosReales.length > 0) {

@@ -782,17 +782,28 @@ function buildChecklist(containerId, items, prefix, doneSet, cntId, total) {
 
 function setChk(e, prefix, i, state, cntId, total) {
   e.stopPropagation();
-  const box = document.getElementById(prefix + '-' + i);
-  e.target.parentElement.querySelectorAll('.tri-btn').forEach(b => b.className = 'tri-btn');
+  var box = document.getElementById(prefix + '-' + i);
+  e.target.parentElement.querySelectorAll('.tri-btn').forEach(function(b) { b.className = 'tri-btn'; });
   e.target.classList.add(state);
-  if (state === 'ok') box.className = 'chk-box on';
-  else if (state === 'bad') { box.className = 'chk-box fail'; if (prefix.startsWith('r')) rDesvios++; else eDesvios++; }
-  else box.className = 'chk-box';
-  if (cntId) {
-    const set = prefix === 'rd' ? rDocsDone : rInvDone;
-    set.add(i);
-    document.getElementById(cntId).textContent = set.size + '/' + total;
+  var labelEl = box ? box.nextElementSibling : null;
+  var itemLabel = labelEl ? labelEl.querySelector('.chk-label') : null;
+  var itemName = itemLabel ? itemLabel.textContent.replace('Crítico','').replace('Critico','').trim() : ('Item ' + i);
+  if (state === 'ok') {
+    box.className = 'chk-box on';
+    if (window._failedItems) window._failedItems = window._failedItems.filter(function(x){ return x !== itemName; });
+  } else if (state === 'bad') {
+    box.className = 'chk-box fail';
+    if (prefix === 'rd' || prefix === 'ri') rDesvios = (rDesvios||0) + 1;
+    else eDesvios = (eDesvios||0) + 1;
+    if (!window._failedItems) window._failedItems = [];
+    if (window._failedItems.indexOf(itemName) === -1) window._failedItems.push(itemName);
+  } else {
+    box.className = 'chk-box';
   }
+  var set = prefix === 'rd' ? rDocsDone : rInvDone;
+  set.add(i);
+  var cntEl = document.getElementById(cntId);
+  if (cntEl) cntEl.textContent = set.size + '/' + total;
 }
 
 // ── FOTOS ────────────────────────────────────────────────────────────
@@ -980,7 +991,7 @@ function cerrarRecepcion() {
       patente: data.plate || '',
       conductor: conductor,
       tipo: 'Checklist recepcion',
-      descripcion: 'Desvios detectados al recibir camioneta',
+      descripcion: window._failedItems ? window._failedItems.join(', ') : 'Desvios al recibir camioneta',
       nivel: 'medio',
       turno: data.turno || 'Dia'
     });
