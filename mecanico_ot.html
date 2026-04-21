@@ -780,11 +780,11 @@ function buildFleet(list){
   const depts=[...new Set(list.map(v=>v.dept))];
   depts.forEach(dept=>{
     const vehicles=list.filter(v=>v.dept===dept);
-    const dClass=DEPTS[dept]||'dept-op';
-    const dLabel=DEPT_LBL[dept]||dept;
+    var dClass = vehicles[0] && vehicles[0].dclass ? vehicles[0].dclass : 'dept-op';
+    var dLabel = dept;
     const hdr=document.createElement('div');
     hdr.style.cssText='font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin:14px 0 8px';
-    hdr.innerHTML=`<span class="dept-pill ${dClass}">${dLabel}</span> · ${vehicles.length} unidad${vehicles.length>1?'es':''}`;
+    hdr.innerHTML='<span class="dept-pill '+dClass+'">'+dLabel+'</span> · '+vehicles.length+' unidad'+(vehicles.length>1?'es':'');
     c.appendChild(hdr);
     vehicles.forEach(v=>{
       const card=document.createElement('div');
@@ -1205,14 +1205,33 @@ async function cargarDatosReales() {
   }
   // Actualizar métricas con datos reales
   if (flota.ok && flota.data.length > 0) {
-    buildFleet(flota.data.map(v => ({
-      plate: v.Patente, model: `${v.Marca} ${v.Modelo} ${v.Año} · ${v.Color}`,
-      dept: v.Departamento, dept_key: v.Departamento?.toLowerCase().replace('ó','o').replace('é','e') || 'operaciones',
-      conductor: v.ConductorActual || null, turno: v.TurnoActual || null,
-      km: String(v.KmActual || 0), comb: v.Combustible || '—',
-      estado: v.Estado?.toLowerCase() === 'bloqueada' ? 'bloqueada' : v.Estado?.toLowerCase() === 'en taller' ? 'taller' : v.ConductorActual ? 'ok' : 'libre',
-      desvios: 0, ot: v.OT_Activa || null
-    })));
+    var flotaReal = flota.data.map(function(v) {
+      var dept = v.Departamento || 'Operaciones';
+      var estado = (v.Estado||'activa').toLowerCase();
+      var dclass = dept.toLowerCase().indexOf('exp') !== -1 ? 'dept-exp' :
+                   dept.toLowerCase().indexOf('prev') !== -1 ? 'dept-prev' :
+                   dept.toLowerCase().indexOf('adm') !== -1 ? 'dept-adm' : 'dept-op';
+      return {
+        plate: v.Patente || '',
+        model: (v.Marca||'') + ' ' + (v.Modelo||'') + ' ' + (v.Año||'') + ' · ' + (v.Color||''),
+        dept: dept,
+        dclass: dclass,
+        conductor: v.ConductorActual || null,
+        turno: v.TurnoActual || null,
+        km: String(v.KmActual || '—'),
+        comb: v.Combustible || '—',
+        estado: estado === 'bloqueada' ? 'bloqueada' :
+                estado === 'en taller' ? 'taller' :
+                v.ConductorActual ? 'ok' : 'libre',
+        desvios: 0,
+        ot: v.OT_Activa || null
+      };
+    });
+    FLEET.length = 0;
+    flotaReal.forEach(function(v) { FLEET.push(v); });
+    buildFleet(FLEET);
+  } else {
+    buildFleet(FLEET);
   }
 }
 window.addEventListener('load', cargarDatosReales);
