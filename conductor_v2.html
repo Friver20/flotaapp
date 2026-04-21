@@ -924,6 +924,36 @@ function setUrg(el) {
 // ── CERRAR RECEPCIÓN ─────────────────────────────────────────────────
 function cerrarRecepcion() {
   recepcionCompleta = true;
+  // Update summary with real values
+  var data = CONDUCTORES[conductor] || {};
+  var kmEl = document.getElementById('r-km');
+  var combEl = document.querySelector('#r-fuel-opts .fuel-opt.on');
+  var kmVal = kmEl ? kmEl.value : '—';
+  var combVal = combEl ? combEl.textContent.trim() : '—';
+  // Update visible summary
+  var pEl = document.getElementById('r-res-plate'); if(pEl) pEl.textContent = data.plate || '—';
+  var kEl = document.getElementById('r-res-km'); if(kEl) kEl.textContent = kmVal + ' km';
+  var cEl = document.getElementById('r-res-comb'); if(cEl) cEl.textContent = combVal;
+  var dEl = document.getElementById('r-res-docs'); if(dEl) dEl.textContent = rDocsDone.size + '/' + 7;
+  var iEl = document.getElementById('r-res-inv'); if(iEl) iEl.textContent = rInvDone.size + '/' + 14;
+  var fEl = document.getElementById('r-res-fotos'); if(fEl) fEl.textContent = rPhotos.size;
+  var devEl = document.getElementById('r-res-desvios');
+  if(devEl) {
+    devEl.textContent = rDesvios;
+    devEl.style.color = rDesvios > 0 ? 'var(--danger)' : 'var(--ok)';
+  }
+  // Update exito screen
+  var exitoR = document.getElementById('exito-r-desvios');
+  if(exitoR) { exitoR.textContent = rDesvios; exitoR.style.color = rDesvios > 0 ? 'var(--danger)' : 'var(--ok)'; }
+  var exitoAlert = document.getElementById('exito-r-alerta');
+  if(exitoAlert) exitoAlert.style.display = rDesvios > 0 ? '' : 'none';
+  // Update timeline
+  var tl1 = document.getElementById('tl1'); if(tl1) { tl1.className = 'tl-circle done'; tl1.textContent = '✓'; }
+  var tl1l = document.getElementById('tl1-lbl'); if(tl1l) tl1l.className = 'tl-label done';
+  var tl2 = document.getElementById('tl2'); if(tl2) tl2.className = 'tl-circle active-r';
+  var tl2l = document.getElementById('tl2-lbl'); if(tl2l) tl2l.className = 'tl-label active-r';
+  var tlline = document.getElementById('tl-line1'); if(tlline) tlline.classList.add('done');
+  var tlmsg = document.getElementById('timeline-msg'); if(tlmsg) tlmsg.textContent = 'Recepcion completada. Completa la entrega al terminar tu turno.';
   // Guardar acta de recepcion en Sheets
   var data = CONDUCTORES[conductor] || {};
   var kmEl = document.getElementById('r-km');
