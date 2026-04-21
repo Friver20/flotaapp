@@ -976,57 +976,63 @@ function setUrg(el) {
 // ── CERRAR RECEPCIÓN ─────────────────────────────────────────────────
 function cerrarRecepcion() {
   recepcionCompleta = true;
-  // Update summary with real values
-  var data = CONDUCTORES[conductor] || {};
-  var kmEl = document.getElementById('r-km');
-  var combEl = document.querySelector('#r-fuel-opts .fuel-opt.on');
-  var kmVal = kmEl ? kmEl.value : '—';
-  var combVal = combEl ? combEl.textContent.trim() : '—';
-  // Update visible summary
-  var pEl = document.getElementById('r-res-plate'); if(pEl) pEl.textContent = data.plate || '—';
-  var kEl = document.getElementById('r-res-km'); if(kEl) kEl.textContent = kmVal + ' km';
-  var cEl = document.getElementById('r-res-comb'); if(cEl) cEl.textContent = combVal;
-  var dEl = document.getElementById('r-res-docs'); if(dEl) dEl.textContent = rDocsDone.size + '/' + 7;
-  var iEl = document.getElementById('r-res-inv'); if(iEl) iEl.textContent = rInvDone.size + '/' + 14;
-  var fEl = document.getElementById('r-res-fotos'); if(fEl) fEl.textContent = rPhotos.size;
-  var devEl = document.getElementById('r-res-desvios');
-  if(devEl) {
-    devEl.textContent = rDesvios;
-    devEl.style.color = rDesvios > 0 ? 'var(--danger)' : 'var(--ok)';
-  }
-  // Update exito screen
-  var exitoR = document.getElementById('exito-r-desvios');
-  if(exitoR) { exitoR.textContent = rDesvios; exitoR.style.color = rDesvios > 0 ? 'var(--danger)' : 'var(--ok)'; }
-  var exitoAlert = document.getElementById('exito-r-alerta');
-  if(exitoAlert) exitoAlert.style.display = rDesvios > 0 ? '' : 'none';
-  // Update timeline
-  var tl1 = document.getElementById('tl1'); if(tl1) { tl1.className = 'tl-circle done'; tl1.textContent = '✓'; }
-  var tl1l = document.getElementById('tl1-lbl'); if(tl1l) tl1l.className = 'tl-label done';
-  var tl2 = document.getElementById('tl2'); if(tl2) tl2.className = 'tl-circle active-r';
-  var tl2l = document.getElementById('tl2-lbl'); if(tl2l) tl2l.className = 'tl-label active-r';
-  var tlline = document.getElementById('tl-line1'); if(tlline) tlline.classList.add('done');
-  var tlmsg = document.getElementById('timeline-msg'); if(tlmsg) tlmsg.textContent = 'Recepcion completada. Completa la entrega al terminar tu turno.';
-  // Guardar acta de recepcion en Sheets
   var data = CONDUCTORES[conductor] || {};
   var kmEl = document.getElementById('r-km');
   var combEl = document.querySelector('#r-fuel-opts .fuel-opt.on');
   var obsEl = document.querySelector('#r-paso3 .obs-ta');
+  var kmVal = kmEl ? kmEl.value : '—';
+  var combVal = combEl ? combEl.textContent.trim() : '—';
+
+  // Actualizar resumen paso 4
+  var els = {
+    'r-res-plate': data.plate || '—',
+    'r-res-km': kmVal + ' km',
+    'r-res-comb': combVal,
+    'r-res-docs': rDocsDone.size + '/' + 7,
+    'r-res-inv': rInvDone.size + '/' + 10,
+    'r-res-fotos': rPhotos ? rPhotos.size : 0,
+    'r-res-desvios': rDesvios
+  };
+  Object.keys(els).forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.textContent = els[id];
+      if (id === 'r-res-desvios') el.style.color = rDesvios > 0 ? 'var(--danger)' : 'var(--ok)';
+    }
+  });
+
+  // Actualizar pantalla de éxito
+  var safe = function(id, fn) { var el = document.getElementById(id); if(el) fn(el); };
+  safe('exito-r-desvios', function(el) { el.textContent = rDesvios; el.style.color = rDesvios > 0 ? 'var(--danger)' : 'var(--ok)'; });
+  safe('exito-r-alerta', function(el) { el.style.display = rDesvios > 0 ? '' : 'none'; });
+  safe('tab-recep-badge', function(el) { el.style.display = ''; });
+  safe('tab-entrega-badge', function(el) { el.style.display = ''; });
+
+  // Actualizar timeline
+  safe('tl1', function(el) { el.className = 'tl-circle done'; el.textContent = '✓'; });
+  safe('tl1-lbl', function(el) { el.className = 'tl-label done'; });
+  safe('tl2', function(el) { el.className = 'tl-circle active-r'; });
+  safe('tl2-lbl', function(el) { el.className = 'tl-label active-r'; });
+  safe('tl-line1', function(el) { el.classList.add('done'); });
+  safe('timeline-msg', function(el) { el.textContent = 'Recepción completada. Completa la entrega al terminar tu turno.'; });
+
+  // Guardar en Sheets
   apiCall('guardarActa', {
     tipo: 'Recepcion',
     patente: data.plate || '',
     departamento: (data.model||'').split('·').slice(-1)[0].trim(),
     conductorEntrante: conductor,
     turnoEntrante: data.turno || 'Dia',
-    kmInicio: kmEl ? kmEl.value : '',
-    combustible: combEl ? combEl.textContent.trim() : '',
+    kmInicio: kmVal,
+    combustible: combVal,
     desvios: rDesvios || 0,
     observaciones: obsEl ? obsEl.value : 'SIN NOVEDAD',
     firmaConductor: 'Firmado digitalmente',
     fotos: rPhotos ? rPhotos.size : 0
   }).then(function(r) {
-    if (r.ok) mostrarGuardando('Recepcion guardada en Drive');
-    else mostrarGuardando('Error al guardar: ' + (r.error||''));
+    mostrarGuardando(r.ok ? 'Recepcion guardada en Drive' : 'Error: ' + (r.error||''));
   });
+
   if (rDesvios > 0) {
     apiCall('guardarDesvio', {
       patente: data.plate || '',
@@ -1037,20 +1043,10 @@ function cerrarRecepcion() {
       turno: data.turno || 'Dia'
     });
   }
-  document.getElementById('exito-r-desvios').textContent = rDesvios;
-  document.getElementById('exito-r-desvios').style.color = rDesvios > 0 ? 'var(--danger)' : 'var(--ok)';
-  document.getElementById('exito-r-alerta').style.display = rDesvios > 0 ? '' : 'none';
-  document.getElementById('tab-recep-badge').style.display = '';
-  document.getElementById('tab-entrega-badge').style.display = '';
-  // Actualiza timeline
-  document.getElementById('tl1').className = 'tl-circle done'; document.getElementById('tl1').textContent = '✓';
-  document.getElementById('tl1-lbl').className = 'tl-label done';
-  document.getElementById('tl2').className = 'tl-circle active-r';
-  document.getElementById('tl2-lbl').className = 'tl-label active-r';
-  document.getElementById('tl-line1').classList.add('done');
-  document.getElementById('timeline-msg').textContent = 'Recepción completada. Completa la entrega al terminar tu turno.';
+
+  // Navegar a pantalla de éxito
   goS('s-exito-recep');
-  showTabs(true);
+  if (typeof showTabs === 'function') showTabs(true);
 }
 
 // ── CERRAR ENTREGA ───────────────────────────────────────────────────
