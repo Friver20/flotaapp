@@ -780,28 +780,68 @@ function buildFleet(list){
   const depts=[...new Set(list.map(v=>v.dept))];
   depts.forEach(dept=>{
     const vehicles=list.filter(v=>v.dept===dept);
+    const dClass=DEPTS[dept]||'dept-op';
+    const dLabel=DEPT_LBL[dept]||dept;
     const hdr=document.createElement('div');
     hdr.style.cssText='font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin:14px 0 8px';
-    hdr.innerHTML=`<span class="dept-pill ${DEPT_C[dept]||'dept-op'}">${DEPT_L[dept]||dept}</span> · ${vehicles.length} unidad${vehicles.length>1?'es':''}`;
+    hdr.innerHTML=`<span class="dept-pill ${dClass}">${dLabel}</span> · ${vehicles.length} unidad${vehicles.length>1?'es':''}`;
     c.appendChild(hdr);
     vehicles.forEach(v=>{
       const card=document.createElement('div');
-      card.style.cssText='background:var(--bg2);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px';
-      const bColor=v.estado==='bloqueada'?'rgba(239,68,68,0.5)':v.estado==='taller'?'rgba(59,130,246,0.4)':v.estado==='desvio'?'rgba(245,158,11,0.35)':'rgba(255,255,255,0.07)';
-      card.style.border=`1px solid ${bColor}`;
-      const eBadge=v.estado==='bloqueada'?'<span class="badge badge-red">Bloqueada</span>':v.estado==='taller'?'<span class="badge badge-blue">En taller</span>':v.estado==='desvio'?'<span class="badge badge-amber">Con desvío</span>':v.estado==='libre'?'<span class="badge" style="background:var(--bg3);color:var(--text3)">Disponible</span>':v.turno==='dia'?'<span class="badge badge-amber" style="background:rgba(245,158,11,0.15)">☀ Día</span>':'<span class="badge badge-blue" style="background:rgba(59,130,246,0.15)">☾ Noche</span>';
-      const drv=v.conductor?`<div style="font-size:12px;color:var(--text2);margin-top:4px">${v.conductor} · Turno ${v.turno}</div>`:`<div style="font-size:12px;color:var(--text3);margin-top:4px">Sin conductor</div>`;
+      card.style.cssText='background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px';
+      const borderColor=v.estado==='bloqueada'?'rgba(239,68,68,0.5)':v.estado==='taller'?'rgba(59,130,246,0.4)':v.estado==='desvio'?'rgba(245,158,11,0.35)':'var(--border)';
+      card.style.borderColor=borderColor;
+      const eBadge=v.estado==='bloqueada'?'<span class="badge badge-red">Bloqueada</span>':v.estado==='taller'?'<span class="badge badge-blue">En taller</span>':v.estado==='desvio'?'<span class="badge badge-amber">Con desvío</span>':v.estado==='libre'?'<span class="badge" style="background:var(--bg3);color:var(--text3)">Disponible</span>':v.turno==='dia'?'<span class="badge badge-dia">☀ Día</span>':'<span class="badge badge-noche">☾ Noche</span>';
+      const drv=v.conductor
+        ?`<div style="font-size:12px;color:var(--text2);margin-top:4px">${v.conductor} · Turno ${v.turno}</div>`
+        :`<div style="font-size:12px;color:var(--text3);margin-top:4px">Sin conductor asignado</div>`;
       const otR=v.ot?`<div style="font-size:11px;color:var(--ot);margin-top:4px;font-family:'DM Mono',monospace">${v.ot}</div>`:'';
-      card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div><div style="font-family:'DM Mono',monospace;font-size:17px;font-weight:500;letter-spacing:1.5px">${v.plate}</div><div style="font-size:11px;color:var(--text2);margin-top:1px">${v.model}</div></div>
-        ${eBadge}</div>${drv}${otR}
-        <div style="display:flex;gap:14px;padding:8px 0;border-top:1px solid var(--border);margin-top:8px">
+      // Assign button — only for available/desvio vehicles
+      const canAssign = v.estado!=='taller' && v.estado!=='bloqueada';
+      const assignBtn = canAssign ? `
+        <div style="display:flex;gap:6px;margin-top:10px;align-items:center">
+          <select id="sel-cond-${v.plate}" style="flex:1;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;background:var(--bg3);color:var(--text);appearance:none" onchange="this.nextElementSibling.style.opacity=this.value?'1':'0.5'">
+            <option value="">— Asignar conductor día —</option>
+            ${(window._conductores||[]).map(c=>`<option value="${c.Nombre}">${c.Nombre}</option>`).join('')}
+          </select>
+          <button onclick="asignarConductorDia('${v.plate}')" style="padding:7px 12px;border-radius:var(--radius-sm);border:none;background:var(--mec);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;flex-shrink:0">Asignar</button>
+        </div>` : '';
+      card.innerHTML=`
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div><div style="font-family:'DM Mono',monospace;font-size:17px;font-weight:500;letter-spacing:1.5px">${v.plate}</div><div style="font-size:11px;color:var(--text2);margin-top:1px">${v.model}</div></div>
+          ${eBadge}
+        </div>
+        ${drv}${otR}
+        <div style="display:flex;gap:14px;padding:8px 0;border-top:1px solid var(--border);margin-top:8px;flex-wrap:wrap">
           <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Km</div><div style="font-size:13px;font-weight:500">${v.km}</div></div>
           <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Combustible</div><div style="font-size:13px;font-weight:500">${v.comb}</div></div>
-        </div>`;
+        </div>
+        ${assignBtn}`;
       c.appendChild(card);
     });
   });
+}
+
+async function asignarConductorDia(plate) {
+  const sel = document.getElementById('sel-cond-'+plate);
+  if (!sel || !sel.value) { mostrarGuardando('Selecciona un conductor primero'); return; }
+  const conductor = sel.value;
+  mostrarGuardando('Asignando...');
+  const res = await apiCall('asignarConductor', {
+    patente: plate,
+    conductor: conductor,
+    supervisor: document.getElementById('sel-mec')?.value || 'Mecánico',
+    observaciones: 'Asignación turno día por mecánico'
+  });
+  if (res.ok) {
+    // Update local fleet data
+    const v = FLEET.find(x=>x.plate===plate);
+    if (v) { v.conductor=conductor; v.turno='dia'; v.estado='ok'; }
+    buildFleet(FLEET);
+    mostrarGuardando('✓ '+conductor+' asignado a '+plate);
+  } else {
+    mostrarGuardando('Error: '+(res.error||''));
+  }
 }
 function filterFleet(btn,f){
   document.querySelectorAll('#s-flota .fbtn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
@@ -1111,6 +1151,20 @@ async function cerrarOTReal() {
 
 // Cargar datos reales al iniciar
 async function cargarDatosReales() {
+  // Load conductores for assign selectors
+  const condRes = await apiCall('getConductores');
+  if (condRes.ok) {
+    window._conductores = condRes.data;
+    // Update mecanico selector too
+    const mecSel = document.getElementById('sel-mec');
+    if (mecSel && mecSel.options.length <= 4) {
+      const mecRes = await apiCall('getMecanicos');
+      if (mecRes.ok && mecRes.data.length > 0) {
+        mecSel.innerHTML = '<option value="">— Seleccionar —</option>';
+        mecRes.data.forEach(m => { mecSel.innerHTML += `<option>${m.Nombre}</option>`; });
+      }
+    }
+  }
   mostrarGuardando('Cargando datos...');
   const [flota, conductores, desviosRes, otsRes] = await Promise.all([
     apiCall("getFlota"),
