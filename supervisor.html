@@ -788,7 +788,7 @@ async function cargarDatosReales() {
     const sel = document.getElementById('asig-conductor');
     if (sel) {
       sel.innerHTML = '<option value="">— Seleccionar conductor —</option>';
-      condRes.data.filter(c => c.TurnoHabitual === 'Noche' || c.TurnoHabitual === 'Ambos').forEach(c => {
+      condRes.data.filter(c => c.Estado === 'Activo' || !c.Estado).forEach(c => {
         sel.innerHTML += `<option value="${c.Nombre}">${c.Nombre}</option>`;
       });
     }
