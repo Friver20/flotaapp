@@ -391,7 +391,7 @@
           <div style="font-size:12px;color:var(--text2);line-height:1.8">
             Camioneta: <span style="color:var(--text)">CD-3301</span><br>
             Km recibidos: <span style="color:var(--text)">54.210</span> · Combustible: <span style="color:var(--text)">3/4</span><br>
-            Documentos: <span id="r-res-docs" style="color:var(--text)">7/7</span> · Inventario: <span id="r-res-inv" style="color:var(--text)">14/14</span><br>
+            Documentos: <span id="r-res-docs" style="color:var(--text)">7/7</span> · Inventario: <span id="r-res-inv" style="color:var(--text)">0/10</span><br>
             Fotos: <span id="r-res-fotos" style="color:var(--text)">0</span> adjuntas · Desvíos: <span id="r-res-desvios" style="color:var(--text)">0</span>
           </div>
         </div>
@@ -990,7 +990,7 @@ function cerrarRecepcion() {
     'r-res-comb': combVal,
     'r-res-docs': rDocsDone.size + '/' + 7,
     'r-res-inv': rInvDone.size + '/' + 10,
-    'r-res-fotos': rPhotos ? rPhotos.size : 0,
+    'r-res-fotos': (rPhotos && rPhotos.size > 0) ? rPhotos.size : 0,
     'r-res-desvios': rDesvios
   };
   Object.keys(els).forEach(function(id) {
