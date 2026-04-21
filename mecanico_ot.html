@@ -608,6 +608,10 @@ function goNav(s,nb){
   goS(s);
   ['nb-dev','nb-ot','nb-flota','nb-hist'].forEach(n=>document.getElementById(n).classList.remove('on'));
   document.getElementById(nb).classList.add('on');
+  // Rebuild fleet when navigating to flota tab
+  if(s==='s-flota') buildFleet(FLEET);
+  // Rebuild OT when navigating to OT tab
+  if(s==='s-ot') buildOTs(OTS);
 }
 
 function buildDesvios(list){
