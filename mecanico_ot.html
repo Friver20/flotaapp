@@ -857,6 +857,26 @@ async function asignarConductorDia(plate) {
   const sel = document.getElementById('sel-cond-'+plate);
   if (!sel || !sel.value) { mostrarGuardando('Selecciona un conductor primero'); return; }
   const conductor = sel.value;
+  // Check if camioneta has unclosed night shift
+  var vehiculo = FLEET.find(function(x) { return x.plate === plate; });
+  if (vehiculo && vehiculo.conductor) {
+    var forzar = confirm('⚠ ' + vehiculo.conductor + ' no realizó cierre de turno noche.\n\nEsto es una falta al protocolo de entrega.\n\n¿Deseas asignar la camioneta igual al turno día?');
+    if (!forzar) return;
+    var mecNombre2 = document.getElementById('sel-mec') ? document.getElementById('sel-mec').value : 'Mecanico';
+    await apiCall('guardarActa', {
+      tipo: 'Incumplimiento protocolo',
+      patente: plate,
+      departamento: vehiculo.dept || '',
+      conductorSaliente: vehiculo.conductor,
+      conductorEntrante: conductor,
+      mecanico: mecNombre2,
+      turnoEntrante: 'Dia',
+      observaciones: vehiculo.conductor + ' no realizo checklist de entrega turno noche. Asignacion forzada por mecanico ' + mecNombre2 + '.',
+      firmaConductor: 'N/A',
+      firmaResponsable: mecNombre2,
+      estado: 'Incumplimiento'
+    });
+  }
   mostrarGuardando('Asignando...');
   const mecNombre = document.getElementById('sel-mec') ? document.getElementById('sel-mec').value : 'Mecanico';
   const res = await apiCall('asignarConductor', {

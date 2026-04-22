@@ -647,6 +647,27 @@ function mostrarGuardando(msg) {
 
 // ── ENVÍO REAL A SHEETS ────────────────────────────────────────
 async function confirmarAsignacion() {
+  const v = FLEET.find(x => x.plate === currentPlate);
+  // Check if camioneta has unclosed day shift
+  if (v && v.conductor_dia) {
+    const forzar = confirm('⚠ ' + v.conductor_dia + ' no realizó cierre de turno día.\n\nEsto es una falta al protocolo de entrega.\n\n¿Deseas asignar la camioneta igual al turno noche?');
+    if (!forzar) return;
+    // Register protocol violation
+    const conductor = document.getElementById('asig-conductor').value;
+    await apiCall('guardarActa', {
+      tipo: 'Incumplimiento protocolo',
+      patente: currentPlate,
+      departamento: v.dept || '',
+      conductorSaliente: v.conductor_dia,
+      conductorEntrante: conductor,
+      supervisor: supNombre,
+      turnoEntrante: 'Noche',
+      observaciones: v.conductor_dia + ' no realizo checklist de entrega turno dia. Asignacion forzada por supervisor ' + supNombre + '.',
+      firmaConductor: 'N/A',
+      firmaResponsable: supNombre,
+      estado: 'Incumplimiento'
+    });
+  }
   const conductor = document.getElementById('asig-conductor').value;
   if (!conductor) { alert('Debes seleccionar un conductor'); return; }
   const v = FLEET.find(x => x.plate === currentPlate);
