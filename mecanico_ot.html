@@ -276,7 +276,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     <div class="met"><div class="mv" id="m-ot-mes">0</div><div class="ml">Este mes</div></div>
   </div>
   <div id="km-alerts-container"></div>
-  </div>
   <div class="filter-row">
     <button class="fbtn on" onclick="filterOT(this,'todas')">Todas</button>
     <button class="fbtn" onclick="filterOT(this,'abiertas')">Abiertas</button>
@@ -1142,6 +1141,8 @@ async function cargarDatosReales() {
   const condRes = await apiCall('getConductores');
   if (condRes.ok) {
     window._conductores = condRes.data;
+    // Rebuild fleet so assign selectors have conductores
+    if (FLEET.length > 0) buildFleet(FLEET);
     // Update mecanico selector too
     const mecSel = document.getElementById('sel-mec');
     if (mecSel && mecSel.options.length <= 4) {
