@@ -198,7 +198,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     <div class="card" style="border-color:rgba(245,158,11,0.4);background:linear-gradient(135deg,var(--bg2) 75%,var(--amber-bg));margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
         <div>
-          <div style="font-family:'DM Mono',monospace;font-size:16px;font-weight:500;letter-spacing:1px" id="val-plate">—</div>
+          <div style="font-family:DM Mono,monospace;font-size:16px;font-weight:500;letter-spacing:1px" id="val-plate">—</div>
           <div style="font-size:11px;color:var(--text2);margin-top:1px" id="val-model">—</div>
         </div>
         <span class="badge" id="val-nivel-badge">—</span>
@@ -388,10 +388,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     <div class="scr-title">Confirmar OT</div>
     <div class="scr-sub">Paso 3 de 3</div>
     <div class="card" style="border-color:rgba(249,115,22,0.4);background:linear-gradient(135deg,var(--bg2) 75%,var(--ot-bg));margin-bottom:12px">
-      <div style="font-size:11px;color:var(--ot);font-family:'DM Mono',monospace;margin-bottom:6px" id="ot-prev-num">OT-2024-009</div>
+      <div style="font-size:11px;color:var(--ot);font-family:DM Mono,monospace;margin-bottom:6px" id="ot-prev-num">OT-2024-009</div>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
         <div>
-          <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:500;letter-spacing:1px" id="ot-prev-plate">—</div>
+          <div style="font-family:DM Mono,monospace;font-size:18px;font-weight:500;letter-spacing:1px" id="ot-prev-plate">—</div>
           <div style="font-size:11px;color:var(--text2);margin-top:1px" id="ot-prev-tipo-lbl">—</div>
         </div>
         <span class="badge badge-ot" id="ot-prev-tipo">—</span>
@@ -419,8 +419,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   <div class="scr-title">Cerrar OT</div>
   <div class="scr-sub">Registra el trabajo realizado en el taller</div>
   <div class="card" style="border-color:rgba(249,115,22,0.4);margin-bottom:14px">
-    <div style="font-size:11px;color:var(--ot);font-family:'DM Mono',monospace;margin-bottom:4px" id="cerrar-num">—</div>
-    <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:500;letter-spacing:1px;margin-bottom:2px" id="cerrar-plate">—</div>
+    <div style="font-size:11px;color:var(--ot);font-family:DM Mono,monospace;margin-bottom:4px" id="cerrar-num">—</div>
+    <div style="font-family:DM Mono,monospace;font-size:18px;font-weight:500;letter-spacing:1px;margin-bottom:2px" id="cerrar-plate">—</div>
     <div style="font-size:12px;color:var(--text2)" id="cerrar-desc">—</div>
   </div>
   <div class="fgrp">
@@ -601,7 +601,7 @@ function buildDesvios(list){
     el.className='dev-card '+(d.nivel==='critico'?'urgente':'medio');
     const fotoHTML = d.fotoURL ? `<a href="${d.fotoURL}" target="_blank" style="display:block;margin-top:8px;border-radius:8px;overflow:hidden;max-height:120px;border:1px solid var(--border2)"><img src="${d.fotoURL.replace('/view','/preview').replace('view?usp=drivesdk','uc?export=view')}" style="width:100%;max-height:120px;object-fit:cover;display:block" onerror="this.parentElement.innerHTML='<div style=\"padding:8px;font-size:11px;color:var(--text3)\">📷 <a href=\"${d.fotoURL}\" target=\"_blank\" style=\"color:var(--mec)\">Ver foto en Drive</a></div>'" alt="Foto del desvío"></a>` : '';
     el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
-      <div><div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500;letter-spacing:1px">${d.plate} <span class="dept-pill ${DEPT_C[d.dept?.toLowerCase().replace('ó','o').replace('é','e')]||'dept-op'}">${d.dept}</span></div>
+      <div><div style="font-family:DM Mono,monospace;font-size:14px;font-weight:500;letter-spacing:1px">${d.plate} <span class="dept-pill ${DEPT_C[d.dept?.toLowerCase().replace('ó','o').replace('é','e')]||'dept-op'}">${d.dept}</span></div>
       <div style="font-size:12px;color:var(--text2)">${d.conductor} · Turno ${d.turno} · ${d.hora}</div></div>
       <span class="badge ${d.nivel==='critico'?'badge-red':'badge-amber'}">${d.nivel==='critico'?'Crítico':'Medio'}</span>
     </div>
@@ -656,38 +656,82 @@ function cerrarValidacion(){
 
 function buildOTs(list){
   const c=document.getElementById('ot-list');c.innerHTML='';
-  list.forEach(ot=>{
+  if(!list||!list.length){
+    c.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px">Sin órdenes de trabajo</div>';
+    return;
+  }
+  list.forEach(function(ot) {
+    // Support both raw Sheet fields and mapped fields
+    var numOT = ot.NumeroOT || ot.num || '—';
+    var patente = ot.Patente || ot.plate || '—';
+    var dept = ot.Departamento || ot.dept || '—';
+    var tipo = ot.Tipo || ot.tipo || 'Correctiva';
+    var desc = ot.Descripcion || ot.desc || '';
+    var taller = ot.Taller || ot.taller || '—';
+    var fechaIngreso = ot.FechaIngreso || ot.fecha || '';
+    var prioridad = ot.Prioridad || ot.prio || 'Media';
+    var estado = (ot.Estado || ot.estado || 'Abierta');
+    var km = ot.KmIngreso || ot.km || '';
+    var notas = ot.Notas || ot.notas || '';
+    var estadoKey = estado.toLowerCase().replace(' ','-');
+
     const el=document.createElement('div');
-    el.className='ot-card '+ot.estado;
-    const eMap={abierta:{cls:'badge-ot',lbl:'Abierta'},'en-taller':{cls:'badge-blue',lbl:'En taller'},lista:{cls:'badge-green',lbl:'Lista para retirar'}};
-    const est=eMap[ot.estado]||{cls:'badge-amber',lbl:ot.estado};
-    const tMap={correctiva:{cls:'badge-red',lbl:'Correctiva'},programada:{cls:'badge-purple',lbl:'Programada'}};
-    const tip=tMap[ot.tipo]||{cls:'badge-ot',lbl:ot.tipo};
-    const steps=[{l:'OT creada',d:true,a:false},{l:'En taller',d:ot.estado==='lista',a:ot.estado==='en-taller'},{l:'Cerrada',d:false,a:false}];
-    let tr='<div class="ot-tracker">';
-    steps.forEach((s,i)=>{
-      const cls=s.d?'done':s.a?'en-t':'';
-      tr+=`<div class="ot-step"><div class="ot-step-dot ${cls}">${s.d?'✓':i+1}</div><div class="ot-step-lbl ${cls}">${s.l}</div></div>`;
-      if(i<2)tr+=`<div class="ot-line ${s.d?'done':''}"></div>`;
-    });
-    tr+='</div>';
-    const devR=ot.desvio?`<div style="font-size:11px;color:var(--amber);margin-top:4px">Origen: ${ot.desvio}</div>`:'';
-    const btn=ot.estado==='lista'
-      ?`<button class="btn btn-mec" style="margin-top:10px;padding:10px" onclick="abrirCerrar('${ot.num}','${ot.plate}','${ot.desc}')">Cerrar OT · Liberar camioneta →</button>`
-      :ot.estado==='en-taller'
-      ?`<button class="btn btn-blue" style="margin-top:10px;padding:10px" onclick="abrirCerrar('${ot.num}','${ot.plate}','${ot.desc}')">Camioneta volvió del taller →</button>`
-      :`<button class="btn btn-ot" style="margin-top:10px;padding:10px" onclick="abrirCerrar('${ot.num}','${ot.plate}','${ot.desc}')">Marcar ingreso al taller →</button>`;
-    el.innerHTML=`<div style="font-size:11px;color:var(--ot);font-family:'DM Mono',monospace;margin-bottom:4px">${ot.num}</div>
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
-      <div><div style="font-family:'DM Mono',monospace;font-size:16px;font-weight:500;letter-spacing:1px">${ot.plate}</div>
-      <div style="font-size:11px;color:var(--text2);margin-top:1px">${ot.model} · ${ot.dept}</div></div>
-      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end"><span class="badge ${est.cls}">${est.lbl}</span><span class="badge ${tip.cls}">${tip.lbl}</span></div>
-    </div>
-    <div style="font-size:13px;color:var(--text);font-weight:500;margin-bottom:2px">${ot.desc}</div>
-    ${devR}${tr}
-    <div style="font-size:11px;color:var(--text3);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap">
-      <span>🏭 ${ot.taller}</span><span>📅 ${ot.fecha}</span><span>⚡ ${ot.prio.charAt(0).toUpperCase()+ot.prio.slice(1)}</span><span>🔢 ${ot.km} km</span>
-    </div>${btn}`;
+    el.className='ot-card';
+    el.style.cssText='background:var(--bg2);border-radius:var(--radius);padding:14px;margin-bottom:10px;border:1px solid var(--border)';
+
+    const eMap={
+      'abierta':{cls:'badge-ot',lbl:'Abierta',color:'var(--ot)'},
+      'en taller':{cls:'badge-blue',lbl:'En taller',color:'var(--blue)'},
+      'en-taller':{cls:'badge-blue',lbl:'En taller',color:'var(--blue)'},
+      'lista':{cls:'badge-green',lbl:'Lista para retirar',color:'var(--green)'},
+      'cerrada':{cls:'badge-gray',lbl:'Cerrada',color:'var(--text3)'}
+    };
+    const est=eMap[estadoKey]||{cls:'badge-amber',lbl:estado,color:'var(--amber)'};
+    el.style.borderColor = est.color === 'var(--ot)' ? 'rgba(249,115,22,0.3)' :
+                           est.color === 'var(--blue)' ? 'rgba(59,130,246,0.3)' :
+                           est.color === 'var(--green)' ? 'rgba(34,197,94,0.3)' : 'var(--border)';
+
+    const tMap={
+      'correctiva':{cls:'badge-red',lbl:'Correctiva'},
+      'programada':{cls:'badge-purp',lbl:'Programada'},
+      'preventiva':{cls:'badge-blue',lbl:'Preventiva'}
+    };
+    const tip=tMap[tipo.toLowerCase()]||{cls:'badge-amber',lbl:tipo};
+
+    const prioColor = prioridad.toLowerCase()==='alta'?'var(--red)':prioridad.toLowerCase()==='media'?'var(--amber)':'var(--text3)';
+    
+    // Steps tracker
+    var step1done = true;
+    var step2done = estadoKey === 'en taller' || estadoKey === 'en-taller' || estadoKey === 'lista' || estadoKey === 'cerrada';
+    var step3done = estadoKey === 'cerrada';
+
+    var fechaStr = '';
+    if (fechaIngreso) {
+      try { fechaStr = new Date(fechaIngreso).toLocaleDateString('es-CL'); } catch(e) { fechaStr = fechaIngreso; }
+    }
+
+    el.innerHTML = 
+      '<div style="font-family:DM Mono,monospace;font-size:13px;font-weight:500;color:var(--ot);margin-bottom:6px">'+numOT+'</div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'+
+        '<div>'+
+          '<div style="font-size:20px;font-weight:600;letter-spacing:1px">'+patente+'</div>'+
+          '<div style="font-size:12px;color:var(--text2)">'+dept+'</div>'+
+        '</div>'+
+        '<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">'+
+          '<span class="badge '+est.cls+'">'+est.lbl+'</span>'+
+          '<span class="badge '+tip.cls+'">'+tip.lbl+'</span>'+
+        '</div>'+
+      '</div>'+
+      '<div style="font-size:13px;color:var(--text);margin-bottom:8px;font-weight:500">'+desc+'</div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;font-size:11px;color:var(--text3)">'+
+        '<span>🏭 '+taller+'</span>'+
+        (fechaStr?'<span>📅 '+fechaStr+'</span>':'')+
+        '<span style="color:'+prioColor+'">⚡ '+prioridad+'</span>'+
+        (km?'<span>📍 '+km+' km</span>':'')+
+      '</div>'+
+      (estadoKey==='abierta'||estadoKey==='en taller'||estadoKey==='en-taller'?
+        '<button class="btn btn-mec" style="padding:10px;font-size:13px" onclick="cerrarOT(''+numOT+'',''+patente+'')">Cerrar OT · Liberar camioneta →</button>':'');
+
     c.appendChild(el);
   });
 }
@@ -780,7 +824,7 @@ function buildFleet(list){
       var drv = v.conductor
         ? '<div style="font-size:12px;color:var(--mec);margin-top:4px;font-weight:500">✓ '+v.conductor+' · Turno '+v.turno+'</div>'
         : '<div style="font-size:12px;color:var(--text3);margin-top:4px">Sin conductor asignado</div>';
-      const otR=v.ot?`<div style="font-size:11px;color:var(--ot);margin-top:4px;font-family:'DM Mono',monospace">${v.ot}</div>`:'';
+      const otR=v.ot?`<div style="font-size:11px;color:var(--ot);margin-top:4px;font-family:DM Mono,monospace">${v.ot}</div>`:'';
       // Assign button — only when no conductor assigned and not in taller/blocked
       const canAssign = !v.conductor && v.estado!=='taller' && v.estado!=='bloqueada';
       const assignBtn = canAssign ? `
@@ -793,7 +837,7 @@ function buildFleet(list){
         </div>` : '';
       card.innerHTML=`
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <div><div style="font-family:'DM Mono',monospace;font-size:17px;font-weight:500;letter-spacing:1.5px">${v.plate}</div><div style="font-size:11px;color:var(--text2);margin-top:1px">${v.model}</div></div>
+          <div><div style="font-family:DM Mono,monospace;font-size:17px;font-weight:500;letter-spacing:1.5px">${v.plate}</div><div style="font-size:11px;color:var(--text2);margin-top:1px">${v.model}</div></div>
           ${eBadge}
         </div>
         ${drv}${otR}
@@ -847,7 +891,7 @@ function buildHist(){
     const el=document.createElement('div');
     el.style.cssText='background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px';
     el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-      <span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500">${i.plate}</span>
+      <span style="font-family:DM Mono,monospace;font-size:14px;font-weight:500">${i.plate}</span>
       <span class="badge ${i.cls}">${i.tipo}</span></div>
       <div style="font-size:12px;color:var(--text2)">${i.hora} · ${i.desc}</div>`;
     c.appendChild(el);
@@ -1209,6 +1253,15 @@ async function cargarDatosReales() {
   safe('m-medios', medios);
   safe('m-validados', validados);
   
+  // Cargar OTs reales
+  if (otsRes.ok && otsRes.data.length > 0) {
+    OTS.length = 0;
+    otsRes.data.forEach(function(o) { OTS.push(o); });
+    buildOTs(OTS);
+  } else {
+    buildOTs([]);
+  }
+
   // Actualizar métricas de OT
   if (otsRes.ok) {
     var abiertas = otsRes.data.filter(function(o) { return o.Estado === 'Abierta'; }).length;
