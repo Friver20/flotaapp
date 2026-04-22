@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>FlotaApp · Conductor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117; --bg2: #1a1d27; --bg3: #22263a;
+    --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
+    --text: #f0f2ff; --text2: #8b90a8; --text3: #555a72;
+    --accent: #4f8ef7; --ok: #2dd4a0; --ok-bg: rgba(45,212,160,0.1);
+    --warn: #f59e3a; --warn-bg: rgba(245,158,58,0.1);
+    --danger: #f25c5c; --danger-bg: rgba(242,92,92,0.1);
+    --recep: #4f8ef7; --recep-bg: rgba(79,142,247,0.1);
+    --entrega: #a78bfa; --entrega-bg: rgba(167,139,250,0.1);
+    --radius: 14px; --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; overflow: hidden; }
+  .app { display: flex; flex-direction: column; height: 100dvh; max-width: 430px; margin: 0 auto; }
+
+  /* TOPBAR */
+  .topbar { padding: 52px 20px 0; background: var(--bg2); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .topbar-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+  .topbar-title { font-size: 20px; font-weight: 600; color: var(--text); }
+  .topbar-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .role-tag { background: var(--accent); color: #fff; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+
+  /* MODO TABS (recepción / entrega) */
+  .mode-tabs { display: flex; gap: 0; border-bottom: none; }
+  .mode-tab { flex: 1; padding: 10px 0; text-align: center; font-size: 13px; font-weight: 600; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; transition: all .2s; position: relative; }
+  .mode-tab.active-recep { color: var(--recep); border-bottom-color: var(--recep); }
+  .mode-tab.active-entrega { color: var(--entrega); border-bottom-color: var(--entrega); }
+  .mode-tab .tab-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+  .tab-dot-recep { background: var(--recep); }
+  .tab-dot-entrega { background: var(--entrega); }
+  .tab-badge { font-size: 10px; padding: 1px 5px; border-radius: 10px; margin-left: 5px; font-weight: 600; }
+  .tab-badge-ok { background: var(--ok-bg); color: var(--ok); }
+  .tab-badge-pend { background: var(--warn-bg); color: var(--warn); }
+
+  /* SCROLL */
+  .scr { flex: 1; overflow-y: auto; padding: 16px; scroll-behavior: smooth; }
+  .scr::-webkit-scrollbar { display: none; }
+
+  /* NAVBAR */
+  .navbar { display: flex; background: var(--bg2); border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom); flex-shrink: 0; }
+  .nb { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 0; cursor: pointer; border: none; background: none; color: var(--text3); font-size: 10px; font-family: 'DM Sans', sans-serif; transition: color .15s; }
+  .nb.on { color: var(--accent); }
+  .nb svg { width: 20px; height: 20px; fill: currentColor; }
+
+  /* CARDS */
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
+  .card-recep { border-color: rgba(79,142,247,0.3); background: linear-gradient(135deg, var(--bg2) 80%, var(--recep-bg)); }
+  .card-entrega { border-color: rgba(167,139,250,0.3); background: linear-gradient(135deg, var(--bg2) 80%, var(--entrega-bg)); }
+  .card-ok { border-color: var(--ok); }
+  .card-warn { border-color: var(--warn); }
+  .card-danger { border-color: var(--danger); }
+
+  /* STATUS PILL */
+  .status-pill { display: flex; align-items: center; gap: 8px; background: var(--bg3); border-radius: 30px; padding: 6px 12px; margin-bottom: 14px; width: fit-content; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .status-text { font-size: 12px; font-weight: 600; }
+
+  /* VEH */
+  .plate { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; letter-spacing: 2px; }
+  .model { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
+  .badge-dia { background: rgba(245,158,58,0.15); color: var(--warn); }
+  .badge-noche { background: rgba(79,142,247,0.15); color: var(--accent); }
+  .badge-ok { background: var(--ok-bg); color: var(--ok); }
+  .badge-warn { background: var(--warn-bg); color: var(--warn); }
+  .badge-recep { background: var(--recep-bg); color: var(--recep); }
+  .badge-entrega { background: var(--entrega-bg); color: var(--entrega); }
+
+  .info-row { display: flex; gap: 16px; padding: 10px 0; border-top: 1px solid var(--border); margin-top: 10px; flex-wrap: wrap; }
+  .info-item { display: flex; flex-direction: column; gap: 2px; }
+  .info-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .6px; }
+  .info-val { font-size: 14px; font-weight: 500; color: var(--text); }
+
+  /* TIMELINE de estado */
+  .timeline { display: flex; align-items: center; gap: 0; margin: 14px 0; }
+  .tl-step { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+  .tl-circle { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; border: 2px solid var(--border2); color: var(--text3); background: var(--bg3); }
+  .tl-circle.done { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
+  .tl-circle.active-r { background: var(--recep-bg); border-color: var(--recep); color: var(--recep); }
+  .tl-circle.active-e { background: var(--entrega-bg); border-color: var(--entrega); color: var(--entrega); }
+  .tl-label { font-size: 10px; color: var(--text3); text-align: center; line-height: 1.2; }
+  .tl-label.done { color: var(--ok); }
+  .tl-label.active-r { color: var(--recep); font-weight: 600; }
+  .tl-label.active-e { color: var(--entrega); font-weight: 600; }
+  .tl-line { flex: 1; height: 2px; background: var(--border2); margin-bottom: 14px; }
+  .tl-line.done { background: var(--ok); }
+
+  /* FORMS */
+  .sec-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .8px; margin: 16px 0 8px; }
+  .fgrp { margin-bottom: 12px; }
+  .flbl { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; display: block; margin-bottom: 5px; }
+  .inp { width: 100%; border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 14px; font-family: 'DM Sans', sans-serif; background: var(--bg3); color: var(--text); }
+  .inp:focus { outline: none; border-color: var(--accent); }
+  .inp::placeholder { color: var(--text3); }
+  .sel { width: 100%; border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 14px; font-family: 'DM Sans', sans-serif; background: var(--bg3); color: var(--text); appearance: none; }
+  .obs-ta { width: 100%; min-height: 80px; border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 13px; font-family: 'DM Sans', sans-serif; background: var(--bg3); color: var(--text); resize: none; }
+  .obs-ta::placeholder { color: var(--text3); }
+  .obs-ta:focus { outline: none; border-color: var(--accent); }
+
+  /* CHECKLIST */
+  .chk-group { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 10px; }
+  .chk-group-hdr { padding: 10px 14px; background: var(--bg3); border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .6px; display: flex; justify-content: space-between; }
+  .chk-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .chk-item:last-child { border-bottom: none; }
+  .chk-box { width: 24px; height: 24px; border-radius: 6px; border: 1.5px solid var(--border2); background: var(--bg3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .15s; margin-top: 1px; }
+  .chk-box.on { background: var(--accent); border-color: var(--accent); }
+  .chk-box.fail { background: var(--danger); border-color: var(--danger); }
+  .chk-box.na { background: rgba(100,116,139,0.2); border-color: rgba(100,116,139,0.4); }
+  .chk-box.warn { background: var(--amber-bg,rgba(245,158,11,0.1)); border-color: var(--amber,#f59e0b); }
+  .chk-box svg { width: 14px; height: 14px; fill: #fff; opacity: 0; transition: opacity .15s; }
+  .chk-box.on svg, .chk-box.fail svg { opacity: 1; }
+  .chk-label { font-size: 14px; color: var(--text); line-height: 1.3; }
+  .chk-crit { font-size: 10px; padding: 1px 6px; border-radius: 10px; background: var(--danger-bg); color: var(--danger); font-weight: 600; margin-left: 6px; }
+  .tri-row { display: flex; gap: 5px; margin-top: 6px; }
+  .tri-btn { flex: 1; padding: 6px 4px; border-radius: 6px; border: 1px solid var(--border2); background: var(--bg3); color: var(--text2); font-size: 11px; font-family: 'DM Sans', sans-serif; cursor: pointer; text-align: center; transition: all .15s; }
+  .tri-btn.ok { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); font-weight: 600; }
+  .tri-btn.na { background: rgba(100,116,139,0.15); border-color: rgba(100,116,139,0.4); color: #94a3b8; font-weight: 600; }
+  .tri-btn.warn { background: var(--warn-bg); border-color: var(--warn); color: var(--warn); font-weight: 600; }
+  .tri-btn.bad { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); font-weight: 600; }
+
+  /* FUEL */
+  .fuel-bar { height: 8px; border-radius: 4px; background: var(--bg3); overflow: hidden; margin: 6px 0; }
+  .fuel-fill { height: 100%; border-radius: 4px; background: var(--ok); transition: width .3s; }
+  .fuel-opts { display: flex; gap: 5px; }
+  .fuel-opt { flex: 1; text-align: center; padding: 7px 3px; border: 1px solid var(--border2); border-radius: 8px; font-size: 12px; cursor: pointer; background: var(--bg3); color: var(--text2); font-family: 'DM Sans', sans-serif; transition: all .15s; }
+  .fuel-opt.on { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); font-weight: 600; }
+
+  /* NOVEDADES COMPARATIVAS */
+  .diff-card { border-radius: var(--radius-sm); padding: 10px 12px; margin-top: 6px; font-size: 12px; line-height: 1.5; }
+  .diff-ok { background: var(--ok-bg); color: var(--ok); border: 1px solid rgba(45,212,160,0.2); }
+  .diff-warn { background: var(--warn-bg); color: var(--warn); border: 1px solid rgba(245,158,58,0.2); }
+  .diff-bad { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(242,92,92,0.2); }
+
+  /* PHOTOS */
+  .photo-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .photo-slot { aspect-ratio: 1; border: 1.5px dashed var(--border2); border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: var(--bg3); gap: 4px; transition: all .15s; }
+  .photo-slot.done { border: 1.5px solid var(--ok); background: var(--ok-bg); }
+  .photo-slot svg { width: 20px; height: 20px; fill: var(--text3); }
+  .photo-slot.done svg { fill: var(--ok); }
+  .photo-slot span { font-size: 9px; color: var(--text3); text-align: center; line-height: 1.2; padding: 0 4px; }
+  .photo-slot.done span { color: var(--ok); }
+
+  /* SIGN */
+  .sign-area { height: 90px; border: 1.5px dashed var(--border2); border-radius: var(--radius-sm); background: var(--bg3); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text3); font-size: 13px; margin-top: 6px; transition: all .15s; }
+  .sign-area.done { border: 1.5px solid var(--ok); background: var(--ok-bg); color: var(--ok); font-weight: 600; }
+
+  /* BUTTONS */
+  .btn { width: 100%; padding: 14px; border-radius: var(--radius); border: none; font-size: 15px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; margin-top: 8px; transition: all .15s; }
+  .btn:active { transform: scale(0.98); }
+  .btn-recep { background: var(--recep); color: #fff; }
+  .btn-entrega { background: var(--entrega); color: #fff; }
+  .btn-secondary { background: var(--bg3); color: var(--text2); border: 1px solid var(--border2); }
+  .btn-danger { background: var(--danger); color: #fff; }
+
+  /* PROG */
+  .prog { height: 3px; background: var(--bg3); border-radius: 2px; margin-bottom: 16px; overflow: hidden; }
+  .prog-fill-r { height: 100%; border-radius: 2px; background: var(--recep); transition: width .3s; }
+  .prog-fill-e { height: 100%; border-radius: 2px; background: var(--entrega); transition: width .3s; }
+  .scr-title { font-size: 20px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .scr-sub { font-size: 13px; color: var(--text2); margin-bottom: 14px; }
+
+  /* SUCCESS */
+  .success-wrap { display: flex; flex-direction: column; align-items: center; padding: 40px 20px; text-align: center; gap: 12px; }
+  .success-icon { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .success-icon svg { width: 32px; height: 32px; fill: #fff; }
+
+  /* FALLA */
+  .falla-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; }
+
+  /* LOGIN */
+  .login-wrap { padding: 60px 24px 30px; overflow-y: auto; flex: 1; }
+  .login-logo { font-size: 28px; font-weight: 600; color: var(--text); margin-bottom: 4px; display: flex; align-items: center; gap: 10px; }
+  .login-sub { font-size: 14px; color: var(--text2); margin-bottom: 28px; line-height: 1.5; }
+
+  /* EMPTY */
+  .empty { text-align: center; padding: 30px 20px; color: var(--text3); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ── LOGIN ─────────────────────────────────────────────────── -->
+  <div id="screen-login" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+    <div class="login-wrap">
+      <div class="login-logo">
+        <div style="width:38px;height:38px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2a3 3 0 006 0h6a3 3 0 006 0h2v-5l-3-4zm-.5 1.5L21.46 12H17V9.5h2.5zM6 18.5A1.5 1.5 0 014.5 17 1.5 1.5 0 016 15.5a1.5 1.5 0 010 3zm13 0a1.5 1.5 0 010-3 1.5 1.5 0 010 3z"/></svg>
+        </div>
+        FlotaApp
+      </div>
+      <div class="login-sub">Selecciona tu nombre para continuar</div>
+
+      <div class="fgrp">
+        <label class="flbl">Tu nombre</label>
+        <select class="sel" id="sel-conductor" disabled onchange="document.getElementById('btn-ingresar').style.display=this.value?'':'none'">
+          <option value="">Cargando conductores...</option>
+        </select>
+      </div>
+      <button class="btn btn-recep" id="btn-ingresar" onclick="login()" style="display:none">Ingresar →</button>
+    </div>
+  </div>
+
+  <!-- ── APP PRINCIPAL ─────────────────────────────────────────── -->
+  <div id="screen-app" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+
+    <div class="topbar">
+      <div class="topbar-row">
+        <div>
+          <div class="topbar-title" id="topbar-title">Mi camioneta</div>
+          <div class="topbar-sub" id="topbar-sub"></div>
+        </div>
+        <span class="role-tag">Conductor</span>
+      </div>
+      <!-- TABS RECEPCIÓN / ENTREGA -->
+      <div class="mode-tabs" id="mode-tabs" style="display:none">
+        <div class="mode-tab active-recep" id="tab-recep" onclick="setTab('recep')">
+          <span class="tab-dot tab-dot-recep"></span>Recepción
+          <span class="tab-badge tab-badge-ok" id="tab-recep-badge" style="display:none">✓</span>
+        </div>
+        <div class="mode-tab" id="tab-entrega" onclick="setTab('entrega')">
+          <span class="tab-dot tab-dot-entrega"></span>Entrega
+          <span class="tab-badge tab-badge-pend" id="tab-entrega-badge">Pendiente</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="scr" id="main-scr">
+
+      <!-- ════════════════════════════════════════════
+           PANTALLA INICIO
+      ════════════════════════════════════════════ -->
+      <div id="s-home">
+        <div class="sec-label">Camioneta asignada</div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div class="plate" id="mi-plate">—</div>
+              <div class="model" id="mi-model">—</div>
+            </div>
+            <span class="badge badge-dia" id="mi-turno-badge">—</span>
+          </div>
+          <div class="info-row">
+            <div class="info-item"><div class="info-lbl">Km registrados</div><div class="info-val" id="mi-km">—</div></div>
+            <div class="info-item"><div class="info-lbl">Combustible</div><div class="info-val" id="mi-comb">—</div></div>
+            <div class="info-item"><div class="info-lbl">Turno</div><div class="info-val" id="mi-turno-val">—</div></div>
+          </div>
+        </div>
+
+        <!-- TIMELINE del turno -->
+        <div class="sec-label">Estado de tu turno</div>
+        <div class="card">
+          <div class="timeline">
+            <div class="tl-step">
+              <div class="tl-circle active-r" id="tl1">1</div>
+              <div class="tl-label active-r" id="tl1-lbl">Recepción</div>
+            </div>
+            <div class="tl-line" id="tl-line1"></div>
+            <div class="tl-step">
+              <div class="tl-circle" id="tl2">2</div>
+              <div class="tl-label" id="tl2-lbl">En turno</div>
+            </div>
+            <div class="tl-line" id="tl-line2"></div>
+            <div class="tl-step">
+              <div class="tl-circle" id="tl3">3</div>
+              <div class="tl-label" id="tl3-lbl">Entrega</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text2)" id="timeline-msg">Completa el checklist de recepción para iniciar tu turno.</div>
+        </div>
+
+        <!-- Fallas reportadas -->
+        <div class="sec-label">Fallas activas</div>
+        <div id="fallas-home">
+          <div class="falla-card card-warn">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="font-size:13px;font-weight:600;color:var(--text)">Presión neumático trasero der.</span>
+              <span class="badge badge-warn">Pendiente</span>
+            </div>
+            <div style="font-size:12px;color:var(--text2)">Reportado hoy 07:58 · Pendiente validación mecánico</div>
+          </div>
+        </div>
+
+        <button class="btn btn-recep" id="btn-iniciar-recep" onclick="goS('r-paso1');showTabs(true)">Iniciar checklist de recepción</button>
+        <button class="btn btn-secondary" onclick="goS('s-falla')">Reportar falla</button>
+        <button class="btn btn-secondary" onclick="goS('s-historial')">Ver historial</button>
+      </div>
+
+      <!-- ════════════════════════════════════════════
+           RECEPCIÓN — PASO 1: DATOS
+      ════════════════════════════════════════════ -->
+      <div id="r-paso1" style="display:none">
+        <div class="prog"><div class="prog-fill-r" style="width:25%"></div></div>
+        <div class="scr-title">Datos de recepción</div>
+        <div class="scr-sub">Paso 1 de 4 · Confirma cómo recibes la camioneta</div>
+        <div style="background:var(--recep-bg);border:1px solid rgba(79,142,247,0.25);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--recep);margin-bottom:14px">
+          Registra el estado en que <b>recibes</b> la camioneta. Esto te protege ante cualquier daño previo.
+        </div>
+        <div class="fgrp">
+          <label class="flbl">Camioneta</label>
+          <select class="sel" id="r-sel-cam"><option>CD-3301 · Ford Ranger 2023</option><option>AB-5512 · Toyota Hilux 2022</option><option>GH-1180 · Toyota Hilux 2021</option></select>
+        </div>
+        <div class="fgrp">
+          <label class="flbl">Km al recibir</label>
+          <input class="inp" type="number" placeholder="Ej: 54.210" inputmode="numeric" id="r-km">
+        </div>
+        <div class="fgrp">
+          <label class="flbl">Combustible al recibir</label>
+          <div class="fuel-bar"><div class="fuel-fill" id="r-fuel-fill" style="width:75%"></div></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:10px;color:var(--text3)">Vacío</span><span style="font-size:10px;color:var(--text3)">Lleno</span></div>
+          <div class="fuel-opts" id="r-fuel-opts">
+            <div class="fuel-opt" onclick="setFuel('r',this,'12%')">E</div>
+            <div class="fuel-opt" onclick="setFuel('r',this,'25%')">1/4</div>
+            <div class="fuel-opt" onclick="setFuel('r',this,'50%')">1/2</div>
+            <div class="fuel-opt on" onclick="setFuel('r',this,'75%')">3/4</div>
+            <div class="fuel-opt" onclick="setFuel('r',this,'100%')">LLN</div>
+          </div>
+        </div>
+        <button class="btn btn-recep" onclick="goS('r-paso2')">Siguiente →</button>
+        <button class="btn btn-secondary" onclick="goS('s-home');showTabs(false)">← Cancelar</button>
+      </div>
+
+      <!-- RECEPCIÓN — PASO 2: DOCS + INVENTARIO -->
+      <div id="r-paso2" style="display:none">
+        <div class="prog"><div class="prog-fill-r" style="width:50%"></div></div>
+        <div class="scr-title">Documentación e inventario</div>
+        <div class="scr-sub">Paso 2 de 4 · Verifica cada ítem</div>
+        <div class="chk-group">
+          <div class="chk-group-hdr"><span>Documentos</span><span id="r-docs-cnt" style="color:var(--text3)">0/7</span></div>
+          <div id="r-checks-docs"></div>
+        </div>
+        <div class="chk-group" style="margin-top:8px">
+          <div class="chk-group-hdr"><span>Inventario físico</span><span id="r-inv-cnt" style="color:var(--text3)">0/10</span></div>
+          <div id="r-checks-inv"></div>
+        </div>
+        <div class="chk-group" style="margin-top:8px">
+          <div class="chk-group-hdr"><span>Seguridad activa</span><span id="r-seg-cnt" style="color:var(--text3)">0/3</span></div>
+          <div id="r-checks-seg"></div>
+        </div>
+        <button class="btn btn-recep" onclick="goS('r-paso3')">Siguiente →</button>
+        <button class="btn btn-secondary" onclick="goS('r-paso1')">← Volver</button>
+      </div>
+
+      <!-- RECEPCIÓN — PASO 3: FOTOS -->
+      <div id="r-paso3" style="display:none">
+        <div class="prog"><div class="prog-fill-r" style="width:75%"></div></div>
+        <div class="scr-title">Fotos de recepción</div>
+        <div class="scr-sub">Paso 3 de 4 · Documenta el estado visual</div>
+        <div class="photo-grid" id="r-photos" style="margin-bottom:10px"></div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;display:flex;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:13px;color:var(--text2)">Fotos tomadas</span>
+          <span style="font-size:18px;font-weight:600;color:var(--recep)" id="r-photo-cnt">0/5</span>
+        </div>
+        <div class="fgrp">
+          <label class="flbl">Observaciones al recibir</label>
+          <textarea class="obs-ta" placeholder="Describe daños o anomalías que recibes. Si nada → SIN NOVEDAD"></textarea>
+        </div>
+        <button class="btn btn-recep" onclick="actualizarResumen(); goS('r-paso4')">Siguiente →</button>
+        <button class="btn btn-secondary" onclick="goS('r-paso2')">← Volver</button>
+      </div>
+
+      <!-- RECEPCIÓN — PASO 4: FIRMA -->
+      <div id="r-paso4" style="display:none">
+        <div class="prog"><div class="prog-fill-r" style="width:100%"></div></div>
+        <div class="scr-title">Firma de recepción</div>
+        <div class="scr-sub">Paso 4 de 4</div>
+        <div class="card" style="margin-bottom:12px;font-size:12px;color:var(--text2);line-height:1.6">
+          Al firmar confirmas que revisaste la camioneta y el estado declarado es correcto. Los desvíos detectados serán notificados al mecánico.
+        </div>
+        <div class="fgrp">
+          <label class="flbl">Tu firma</label>
+          <div class="sign-area" id="r-sign" onclick="doSign('r-sign')">Trazar firma aquí con el dedo</div>
+        </div>
+        <div class="card" style="margin-top:4px">
+          <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px">Resumen recepción</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.8">
+            Camioneta: <span style="color:var(--text)">CD-3301</span><br>
+            Km recibidos: <span style="color:var(--text)">54.210</span> · Combustible: <span style="color:var(--text)">3/4</span><br>
+            Documentos: <span id="r-res-docs" style="color:var(--text)">7/7</span> · Inventario: <span id="r-res-inv" style="color:var(--text)">0/10</span><br>
+            Fotos: <span id="r-res-fotos" style="color:var(--text)">0</span> adjuntas · Desvíos: <span id="r-res-desvios" style="color:var(--text)">0</span>
+          </div>
+        </div>
+        <button class="btn btn-recep" onclick="cerrarRecepcion()">Confirmar recepción</button>
+        <button class="btn btn-secondary" onclick="goS('r-paso3')">← Volver</button>
+      </div>
+
+      <!-- ════════════════════════════════════════════
+           ENTREGA — INICIO TAB
+      ════════════════════════════════════════════ -->
+      <div id="e-home" style="display:none">
+        <!-- Comparativa recepción vs. ahora -->
+        <div class="sec-label">Estado al recibir vs. ahora</div>
+        <div class="card card-entrega">
+          <div style="font-size:13px;font-weight:600;color:var(--entrega);margin-bottom:10px">Resumen de tu turno</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Al recibir</div>
+              <div style="font-size:13px;color:var(--text2)">Km: <b style="color:var(--text)">54.210</b></div>
+              <div style="font-size:13px;color:var(--text2)">Comb: <b style="color:var(--text)">3/4</b></div>
+            </div>
+            <div>
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Ahora</div>
+              <div style="font-size:13px;color:var(--text2)">Km: <b style="color:var(--text)">—</b></div>
+              <div style="font-size:13px;color:var(--text2)">Comb: <b style="color:var(--text)">—</b></div>
+            </div>
+          </div>
+          <div class="diff-warn" style="margin-top:10px">Completa el checklist de entrega para registrar cómo devuelves la camioneta.</div>
+        </div>
+
+        <button class="btn btn-entrega" onclick="goS('e-paso1')">Iniciar checklist de entrega</button>
+        <button class="btn btn-secondary" onclick="goS('s-falla')">Reportar falla adicional</button>
+      </div>
+
+      <!-- ENTREGA — PASO 1: DATOS DE CIERRE -->
+      <div id="e-paso1" style="display:none">
+        <div class="prog"><div class="prog-fill-e" style="width:25%"></div></div>
+        <div class="scr-title">Datos de entrega</div>
+        <div class="scr-sub">Paso 1 de 4 · Registra cómo devuelves la camioneta</div>
+        <div style="background:var(--entrega-bg);border:1px solid rgba(167,139,250,0.25);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--entrega);margin-bottom:14px">
+          Registra el estado en que <b>entregas</b> la camioneta al terminar tu turno.
+        </div>
+        <div class="fgrp">
+          <label class="flbl">Km al entregar</label>
+          <input class="inp" type="number" placeholder="Ej: 54.890" inputmode="numeric" id="e-km">
+        </div>
+        <div class="fgrp">
+          <label class="flbl">Combustible al entregar</label>
+          <div class="fuel-bar"><div class="fuel-fill" id="e-fuel-fill" style="width:50%"></div></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:10px;color:var(--text3)">Vacío</span><span style="font-size:10px;color:var(--text3)">Lleno</span></div>
+          <div class="fuel-opts" id="e-fuel-opts">
+            <div class="fuel-opt" onclick="setFuel('e',this,'12%')">E</div>
+            <div class="fuel-opt" onclick="setFuel('e',this,'25%')">1/4</div>
+            <div class="fuel-opt on" onclick="setFuel('e',this,'50%')">1/2</div>
+            <div class="fuel-opt" onclick="setFuel('e',this,'75%')">3/4</div>
+            <div class="fuel-opt" onclick="setFuel('e',this,'100%')">LLN</div>
+          </div>
+        </div>
+        <button class="btn btn-entrega" onclick="goS('e-paso2')">Siguiente →</button>
+        <button class="btn btn-secondary" onclick="goS('e-home')">← Volver</button>
+      </div>
+
+      <!-- ENTREGA — PASO 2: NOVEDADES DEL TURNO -->
+      <div id="e-paso2" style="display:none">
+        <div class="prog"><div class="prog-fill-e" style="width:50%"></div></div>
+        <div class="scr-title">Novedades del turno</div>
+        <div class="scr-sub">Paso 2 de 4 · ¿Ocurrió algo durante tu turno?</div>
+
+        <div class="chk-group">
+          <div class="chk-group-hdr"><span>Estado al devolver</span></div>
+          <div id="e-checks-estado"></div>
+        </div>
+
+        <div class="chk-group" style="margin-top:8px">
+          <div class="chk-group-hdr"><span>Seguridad activa</span><span id="e-seg-cnt" style="color:var(--text3)">0/3</span></div>
+          <div id="e-checks-seg"></div>
+        </div>
+
+        <div class="fgrp" style="margin-top:10px">
+          <label class="flbl">¿Ocurrió algún incidente durante el turno?</label>
+          <div style="display:flex;gap:8px;margin-top:4px">
+            <div class="tri-btn ok" onclick="setIncidente(this,false)" style="flex:1">No, sin novedad</div>
+            <div class="tri-btn" onclick="setIncidente(this,true)" style="flex:1">Sí, detallar</div>
+          </div>
+        </div>
+        <div id="incidente-detail" style="display:none">
+          <textarea class="obs-ta" style="margin-top:6px" placeholder="Describe el incidente: golpe, pinchazo, roce, falla mecánica, etc."></textarea>
+        </div>
+
+        <div class="fgrp" style="margin-top:10px">
+          <label class="flbl">Observaciones generales al entregar</label>
+          <textarea class="obs-ta" placeholder="Información útil para el próximo conductor o mecánico. Si no hay → SIN NOVEDAD"></textarea>
+        </div>
+        <button class="btn btn-entrega" onclick="goS('e-paso3')">Siguiente →</button>
+        <button class="btn btn-secondary" onclick="goS('e-paso1')">← Volver</button>
+      </div>
+
+      <!-- ENTREGA — PASO 3: FOTO CIERRE -->
+      <div id="e-paso3" style="display:none">
+        <div class="prog"><div class="prog-fill-e" style="width:75%"></div></div>
+        <div class="scr-title">Fotos de entrega</div>
+        <div class="scr-sub">Paso 3 de 4 · Documenta cómo dejas la camioneta</div>
+        <div class="photo-grid" id="e-photos" style="margin-bottom:10px"></div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:13px;color:var(--text2)">Fotos tomadas</span>
+          <span style="font-size:18px;font-weight:600;color:var(--entrega)" id="e-photo-cnt">0/4</span>
+        </div>
+        <button class="btn btn-entrega" onclick="goS('e-paso4')">Siguiente →</button>
+        <button class="btn btn-secondary" onclick="goS('e-paso2')">← Volver</button>
+      </div>
+
+      <!-- ENTREGA — PASO 4: FIRMA DE CIERRE -->
+      <div id="e-paso4" style="display:none">
+        <div class="prog"><div class="prog-fill-e" style="width:100%"></div></div>
+        <div class="scr-title">Firma de entrega</div>
+        <div class="scr-sub">Paso 4 de 4</div>
+        <div class="card" style="margin-bottom:12px;font-size:12px;color:var(--text2);line-height:1.6">
+          Al firmar confirmas que la camioneta fue entregada en el estado declarado. Tu turno quedará cerrado formalmente.
+        </div>
+        <div class="fgrp">
+          <label class="flbl">Tu firma de cierre</label>
+          <div class="sign-area" id="e-sign" onclick="doSign('e-sign')">Trazar firma aquí con el dedo</div>
+        </div>
+        <div class="card" style="margin-top:4px">
+          <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">Comparativa del turno</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
+            <div style="background:var(--bg3);border-radius:8px;padding:8px 4px">
+              <div style="font-size:10px;color:var(--text3)">Km recorridos</div>
+              <div style="font-size:16px;font-weight:600;color:var(--text);margin-top:2px">680</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:8px;padding:8px 4px">
+              <div style="font-size:10px;color:var(--text3)">Comb. usado</div>
+              <div style="font-size:16px;font-weight:600;color:var(--warn);margin-top:2px">-1/4</div>
+            </div>
+            <div style="background:var(--bg3);border-radius:8px;padding:8px 4px">
+              <div style="font-size:10px;color:var(--text3)">Desvíos</div>
+              <div style="font-size:16px;font-weight:600;color:var(--ok);margin-top:2px" id="e-res-desvios">0</div>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-entrega" onclick="cerrarEntrega()">Cerrar turno y entregar</button>
+        <button class="btn btn-secondary" onclick="goS('e-paso3')">← Volver</button>
+      </div>
+
+      <!-- ════════════════════════════════════════════
+           PANTALLAS COMUNES
+      ════════════════════════════════════════════ -->
+      <!-- FALLA -->
+      <div id="s-falla" style="display:none">
+        <div class="scr-title">Reportar falla</div>
+        <div class="scr-sub">El mecánico recibirá la notificación de inmediato</div>
+        <div class="fgrp">
+          <label class="flbl">Tipo de falla</label>
+          <select class="sel"><option>Mecánica / Motor</option><option>Eléctrica / Luces</option><option>Neumáticos / Ruedas</option><option>Carrocería / Daño</option><option>Frenos</option><option>Fluidos</option><option>Documentación vencida</option><option>Elemento faltante</option><option>Otro</option></select>
+        </div>
+        <div class="fgrp">
+          <label class="flbl">Descripción</label>
+          <textarea class="obs-ta" style="min-height:100px" placeholder="Describe el problema en detalle. Ej: ruido metálico al frenar en bajada..."></textarea>
+        </div>
+        <div class="fgrp">
+          <label class="flbl">Urgencia</label>
+          <div style="display:flex;gap:8px">
+            <div class="tri-btn ok" onclick="setUrg(this)" style="flex:1">Baja</div>
+            <div class="tri-btn warn" onclick="setUrg(this)" style="flex:1">Media</div>
+            <div class="tri-btn bad" onclick="setUrg(this)" style="flex:1">Alta</div>
+          </div>
+        </div>
+        <div class="fgrp">
+          <label class="flbl">Foto (opcional)</label>
+          <div style="position:relative;width:100%;height:80px;border:1.5px dashed var(--border2);border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;gap:8px;overflow:hidden" id="falla-photo-wrap">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--text3)"><path d="M12 15.2A3.2 3.2 0 018.8 12 3.2 3.2 0 0112 8.8a3.2 3.2 0 013.2 3.2 3.2 3.2 0 01-3.2 3.2M20 4h-3.17L15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/></svg>
+            <span style="font-size:12px;color:var(--text3)">Fotografiar la falla (opcional)</span>
+            <input type="file" accept="image/*" capture="environment" id="falla-photo-input" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
+          </div>
+        </div>
+        <button class="btn btn-danger" onclick="alert('Falla reportada. Mecánico notificado.');goS('s-home')">Reportar al mecánico</button>
+        <button class="btn btn-secondary" onclick="goS('s-home')">← Cancelar</button>
+      </div>
+
+      <!-- HISTORIAL -->
+      <div id="s-historial" style="display:none">
+        <div class="scr-title">Historial</div>
+        <div class="scr-sub">Tus últimas actas completas</div>
+        <div class="card card-ok" style="margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-weight:600">Ayer · Turno día completo</span>
+            <span class="badge badge-ok">Cerrado</span>
+          </div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.7">
+            Recepción 07:58 · Entrega 19:52<br>
+            53.410 → 54.210 km · 800 km recorridos<br>
+            Recibió: Lleno · Entregó: 3/4 · Sin desvíos
+          </div>
+        </div>
+        <div class="card" style="border-color:var(--warn);margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-weight:600">Hace 2 días · Turno día</span>
+            <span class="badge badge-warn">1 desvío</span>
+          </div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.7">
+            52.810 → 53.410 km · 600 km<br>
+            Recibió: 3/4 · Entregó: 1/4<br>
+            <span style="color:var(--warn)">Desvío: Triángulo reflectante faltante</span>
+          </div>
+        </div>
+        <button class="btn btn-secondary" onclick="goS('s-home')">← Volver</button>
+      </div>
+
+      <!-- ÉXITO RECEPCIÓN -->
+      <div id="s-exito-recep" style="display:none">
+        <div class="success-wrap">
+          <div class="success-icon" style="background:var(--recep-bg)">
+            <svg viewBox="0 0 24 24" style="fill:var(--recep)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+          </div>
+          <div style="font-size:22px;font-weight:600;color:var(--text)">Recepción confirmada</div>
+          <div style="font-size:14px;color:var(--text2);line-height:1.6">Tu checklist de recepción fue guardado. Cuando termines tu turno, completa el checklist de entrega.</div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;width:100%;font-size:13px;color:var(--text2);line-height:1.8;text-align:left">
+            CD-3301 · Ford Ranger<br>Km recibidos: 54.210 · Comb: 3/4<br>Desvíos: <span id="exito-r-desvios" style="color:var(--ok)">0</span>
+          </div>
+          <div id="exito-r-alerta" style="display:none;background:var(--danger-bg);border:1px solid rgba(242,92,92,0.3);border-radius:var(--radius);padding:12px 16px;width:100%;font-size:13px;color:var(--danger)">
+            Se detectaron desvíos. El mecánico fue notificado para revisión.
+          </div>
+          <button class="btn btn-recep" onclick="goS('e-home');setTab('entrega')" style="width:100%">Ver estado de entrega</button>
+        </div>
+      </div>
+
+      <!-- ÉXITO ENTREGA -->
+      <div id="s-exito-entrega" style="display:none">
+        <div class="success-wrap">
+          <div class="success-icon" style="background:var(--entrega-bg)">
+            <svg viewBox="0 0 24 24" style="fill:var(--entrega)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+          </div>
+          <div style="font-size:22px;font-weight:600;color:var(--text)">Turno cerrado</div>
+          <div style="font-size:14px;color:var(--text2);line-height:1.6">Tu checklist de entrega fue guardado. El mecánico y/o supervisor recibirán la información.</div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;width:100%;font-size:13px;color:var(--text2);line-height:1.8;text-align:left">
+            Recepción: 54.210 km · Entrega: 54.890 km<br>
+            680 km recorridos · Comb entregado: 1/2<br>
+            Turno cerrado: <span style="color:var(--text)" id="hora-cierre"></span>
+          </div>
+          <button class="btn btn-secondary" onclick="goS('s-home');showTabs(false);setTab('recep')" style="width:100%">Volver al inicio</button>
+        </div>
+      </div>
+
+    </div><!-- /scr -->
+
+    <div class="navbar">
+      <button class="nb on" id="nb-home" onclick="goNav('s-home','nb-home')">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Inicio
+      </button>
+      <button class="nb" id="nb-falla" onclick="goNav('s-falla','nb-falla')">
+        <svg viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm0 3l9 15H3L12 5zm-1 4v4h2V9h-2zm0 6v2h2v-2h-2z"/></svg>Falla
+      </button>
+      <button class="nb" id="nb-hist" onclick="goNav('s-historial','nb-hist')">
+        <svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 00-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0013 21a9 9 0 000-18zm-1 5v5l4.28 2.54.72-1.21L13 13.15V8H12z"/></svg>Historial
+      </button>
+    </div>
+
+  </div><!-- /screen-app -->
+</div>
+
+<script>
+// ── DATOS ──────────────────────────────────────────────────────────
+const CONDUCTORES = {}; // Se carga desde el Sheet;
+
+const DOCS = [
+  {l:'Padrón / certificado de inscripción',crit:true},
+  {l:'Permiso de circulación vigente',crit:true},
+  {l:'SOAP vigente',crit:true},
+  {l:'Póliza de seguro de flota',crit:false},
+  {l:'Revisión técnica vigente',crit:true},
+  {l:'Certificado de emisiones',crit:false},
+  {l:'Bitácora de mantenimiento',crit:false},
+];
+
+const INV = [
+  {l:'Llave principal',crit:true},
+  {l:'Extintor (carga vigente)',crit:true},
+  {l:'Gata hidráulica',crit:false},
+  {l:'Llave de rueda',crit:false},
+  {l:'Triángulos reflectantes (x2)',crit:true},
+  {l:'Chaleco reflectante',crit:false},
+  {l:'Botiquín básico',crit:false},
+  {l:'Rueda de repuesto inflada',crit:true},
+  {l:'Manual del propietario',crit:false},
+  {l:'Radio / sistema de audio',crit:false},
+];
+
+const SEG_ACTIVA = [
+  {l:'Cinturón de seguridad (todos los puestos)',crit:true},
+  {l:'Sensor de somnolencia operativo',crit:true},
+  {l:'Torque de neumáticos verificado',crit:true},
+];
+
+const ESTADO_ENTREGA = [
+  {l:'Carrocería sin daños nuevos',crit:true},
+  {l:'Luces funcionando correctamente',crit:true},
+  {l:'Neumáticos en buen estado',crit:true},
+  {l:'Limpieza interior aceptable',crit:false},
+  {l:'Limpieza exterior aceptable',crit:false},
+  {l:'Extintor y kit de seguridad completos',crit:true},
+  {l:'Tarjeta combustible / TAG presentes',crit:true},
+  {l:'Llaves entregadas',crit:true},
+];
+
+const R_PHOTOS = ['Frontal der.','Trasera der.','Frontal izq.','Tablero (Km)','Daños/sin nov.'];
+const E_PHOTOS = ['Tablero (Km final)','Exterior general','Daños nuevos/sin nov.','Interior'];
+
+// ── ESTADO ─────────────────────────────────────────────────────────
+let conductor = '';
+let rDesvios = 0, eDesvios = 0;
+let rDocsDone = new Set(), rInvDone = new Set();
+let rPhotos = new Set(), ePhotos = new Set();
+let recepcionCompleta = false;
+
+// ── LOGIN ───────────────────────────────────────────────────────────
+function login() {
+  conductor = document.getElementById('sel-conductor').value;
+  if (!conductor) return;
+  const d = CONDUCTORES[conductor] || {plate:'—', model:'Sin camioneta asignada', turno:'Día', km:'—', comb:'—'};
+  document.getElementById('mi-plate').textContent = d.plate;
+  document.getElementById('mi-model').textContent = d.model;
+  document.getElementById('mi-km').textContent = d.km + ' km';
+  document.getElementById('mi-comb').textContent = d.comb;
+  document.getElementById('mi-turno-val').textContent = d.turno === 'día' ? 'Día (08–20h)' : 'Noche (20–08h)';
+  document.getElementById('mi-turno-badge').textContent = d.turno === 'día' ? '☀ Día' : '☾ Noche';
+  document.getElementById('mi-turno-badge').className = 'badge ' + (d.turno === 'día' ? 'badge-dia' : 'badge-noche');
+  document.getElementById('topbar-sub').textContent = conductor + ' · ' + d.plate;
+  document.getElementById('screen-login').style.display = 'none';
+  const app = document.getElementById('screen-app');
+  app.style.display = 'flex';
+  buildDocs(); buildInv(); buildSegActiva(); buildEstadoEntrega(); buildSegActivaEntrega();
+  buildPhotos('r-photos', R_PHOTOS, 'r', 'r-photo-cnt', R_PHOTOS.length);
+  buildPhotos('e-photos', E_PHOTOS, 'e', 'e-photo-cnt', E_PHOTOS.length);
+}
+
+// ── TABS ────────────────────────────────────────────────────────────
+function showTabs(show) {
+  document.getElementById('mode-tabs').style.display = show ? 'flex' : 'none';
+}
+
+function setTab(tab) {
+  const tr = document.getElementById('tab-recep');
+  const te = document.getElementById('tab-entrega');
+  tr.className = 'mode-tab' + (tab === 'recep' ? ' active-recep' : '');
+  te.className = 'mode-tab' + (tab === 'entrega' ? ' active-entrega' : '');
+  if (tab === 'recep') goS('r-paso1');
+  else goS('e-home');
+}
+
+// ── NAVEGACIÓN ──────────────────────────────────────────────────────
+const ALL_SCREENS = ['s-home','r-paso1','r-paso2','r-paso3','r-paso4','e-home','e-paso1','e-paso2','e-paso3','e-paso4','s-falla','s-historial','s-exito-recep','s-exito-entrega'];
+
+function goS(id) {
+  ALL_SCREENS.forEach(s => { const el = document.getElementById(s); if(el) el.style.display = 'none'; });
+  document.getElementById(id).style.display = '';
+  document.getElementById('main-scr').scrollTop = 0;
+  if (id === 's-falla') setTimeout(initFallaPhoto, 100);
+  const titles = {'s-home':'Mi camioneta','r-paso1':'Checklist recepción','r-paso2':'Checklist recepción','r-paso3':'Checklist recepción','r-paso4':'Checklist recepción','e-home':'Checklist entrega','e-paso1':'Checklist entrega','e-paso2':'Checklist entrega','e-paso3':'Checklist entrega','e-paso4':'Checklist entrega','s-falla':'Reportar falla','s-historial':'Historial','s-exito-recep':'Recepción lista','s-exito-entrega':'Turno cerrado'};
+  document.getElementById('topbar-title').textContent = titles[id] || 'FlotaApp';
+}
+
+function goNav(screen, nb) {
+  goS(screen);
+  ['nb-home','nb-falla','nb-hist'].forEach(n => document.getElementById(n).classList.remove('on'));
+  document.getElementById(nb).classList.add('on');
+  showTabs(false);
+}
+
+// ── CHECKLIST DOCS ──────────────────────────────────────────────────
+function buildDocs() {
+  buildChecklist('r-checks-docs', DOCS, 'rd', rDocsDone, 'r-docs-cnt', DOCS.length);
+}
+
+function buildInv() {
+  buildChecklist('r-checks-inv', INV, 'ri', rInvDone, 'r-inv-cnt', INV.length);
+}
+
+function buildSegActiva() {
+  buildChecklist('r-checks-seg', SEG_ACTIVA, 'rs', new Set(), 'r-seg-cnt', SEG_ACTIVA.length);
+}
+
+function buildSegActivaEntrega() {
+  buildChecklist('e-checks-seg', SEG_ACTIVA, 'es', new Set(), 'e-seg-cnt', SEG_ACTIVA.length);
+}
+
+function buildEstadoEntrega() {
+  buildChecklist('e-checks-estado', ESTADO_ENTREGA, 'ee', new Set(), null, 0);
+}
+
+function buildChecklist(containerId, items, prefix, doneSet, cntId, total) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = '';
+  items.forEach((item, i) => {
+    const d = document.createElement('div');
+    d.className = 'chk-item';
+    d.innerHTML = `
+      <div class="chk-box" id="${prefix}-${i}"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg></div>
+      <div style="flex:1">
+        <div class="chk-label">${item.l}${item.crit ? '<span class="chk-crit">Crítico</span>' : ''}</div>
+        <div class="tri-row">
+          <div class="tri-btn ok" onclick="setChk(event,'${prefix}',${i},'ok','${cntId}',${total})">OK</div>
+          <div class="tri-btn" onclick="setChk(event,'${prefix}',${i},'warn','${cntId}',${total})">Regular</div>
+          <div class="tri-btn" onclick="setChk(event,'${prefix}',${i},'bad','${cntId}',${total})">Malo/Falta</div>
+          <div class="tri-btn na" onclick="setChk(event,'${prefix}',${i},'na','${cntId}',${total})">No aplica</div>
+        </div>
+      </div>`;
+    c.appendChild(d);
+  });
+}
+
+function setChk(e, prefix, i, state, cntId, total) {
+  e.stopPropagation();
+  var box = document.getElementById(prefix + '-' + i);
+  e.target.parentElement.querySelectorAll('.tri-btn').forEach(function(b) { b.className = 'tri-btn'; });
+  e.target.classList.add(state);
+  var labelEl = box ? box.nextElementSibling : null;
+  var itemLabel = labelEl ? labelEl.querySelector('.chk-label') : null;
+  var itemName = itemLabel ? itemLabel.textContent.replace('Crítico','').replace('Critico','').trim() : ('Item ' + i);
+  if (state === 'ok') {
+    box.className = 'chk-box on';
+    box.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>';
+    if (window._failedItems) window._failedItems = window._failedItems.filter(function(x){ return x !== itemName; });
+  } else if (state === 'bad') {
+    box.className = 'chk-box fail';
+    box.innerHTML = '<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+    if (prefix === 'rd' || prefix === 'ri') rDesvios = (rDesvios||0) + 1;
+    else eDesvios = (eDesvios||0) + 1;
+    if (!window._failedItems) window._failedItems = [];
+    if (window._failedItems.indexOf(itemName) === -1) window._failedItems.push(itemName);
+  } else if (state === 'na') {
+    box.className = 'chk-box na';
+    box.innerHTML = '<span style="color:#94a3b8;font-size:14px;font-weight:700;line-height:1">—</span>';
+    if (window._failedItems) window._failedItems = window._failedItems.filter(function(x){ return x !== itemName; });
+    var set2 = prefix === 'rd' ? rDocsDone : rInvDone;
+    set2.add(i);
+  } else if (state === 'warn') {
+    box.className = 'chk-box warn';
+    box.innerHTML = '<span style="color:var(--warn,#f59e0b);font-size:16px;font-weight:700;line-height:1">~</span>';
+  } else {
+    box.className = 'chk-box';
+  }
+  var set = prefix === 'rd' ? rDocsDone : rInvDone;
+  set.add(i);
+  var cntEl = document.getElementById(cntId);
+  if (cntEl) cntEl.textContent = set.size + '/' + total;
+}
+
+// ── FOTOS ────────────────────────────────────────────────────────────
+// ── SUBIR FOTO (usa fetch directo, no JSONP) ───────────────────
+async function subirFotoReal(base64, mimeType, nombre) {
+  try {
+    mostrarGuardando('Subiendo foto...');
+    // Split base64 in chunks to avoid URL limits
+    // Use fetch with no-cors as fallback
+    var body = JSON.stringify({
+      accion: 'subirFoto',
+      base64: base64,
+      mimeType: mimeType || 'image/jpeg',
+      nombre: nombre || ('foto_' + Date.now() + '.jpg')
+    });
+    
+    // Try normal fetch first
+    try {
+      var res = await fetch(API_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'text/plain'},
+        body: body
+      });
+      var data = await res.json();
+      if (data.ok) {
+        mostrarGuardando('Foto guardada en Drive');
+        return data;
+      }
+    } catch(fetchErr) {
+      console.log('fetch failed, trying form submit:', fetchErr);
+    }
+    
+    // Fallback: use form POST (no CORS issues)
+    return new Promise(function(resolve) {
+      var form = document.createElement('form');
+      form.method = 'POST';
+      form.action = API_URL;
+      form.target = '_blank';
+      form.style.display = 'none';
+      var input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'payload';
+      input.value = body;
+      form.appendChild(input);
+      document.body.appendChild(form);
+      form.submit();
+      setTimeout(function() {
+        document.body.removeChild(form);
+        mostrarGuardando('Foto enviada');
+        resolve({ok: true});
+      }, 2000);
+    });
+  } catch(e) {
+    console.error('subirFotoReal error:', e);
+    mostrarGuardando('Error al subir foto');
+    return {ok: false, error: e.toString()};
+  }
+}
+
+function buildPhotos(gridId, labels, prefix, cntId, total) {
+  var g = document.getElementById(gridId);
+  if (!g) return;
+  g.innerHTML = '';
+  labels.forEach(function(lbl, i) {
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;cursor:pointer;background:var(--bg3);border:1.5px dashed var(--border2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px';
+    var input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*'; input.capture = 'environment';
+    input.style.cssText = 'position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;z-index:2';
+    var iconDiv = document.createElement('div');
+    iconDiv.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="var(--text3)"><path d="M12 15.2A3.2 3.2 0 018.8 12 3.2 3.2 0 0112 8.8a3.2 3.2 0 013.2 3.2 3.2 3.2 0 01-3.2 3.2M20 4h-3.17L15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/></svg>';
+    var lblEl = document.createElement('span');
+    lblEl.textContent = lbl;
+    lblEl.style.cssText = 'font-size:9px;color:var(--text3);text-align:center;line-height:1.2;padding:0 4px;pointer-events:none';
+    wrap.appendChild(iconDiv); wrap.appendChild(lblEl); wrap.appendChild(input);
+    input.addEventListener('change', function() {
+      if (!this.files || !this.files[0]) return;
+      var file = this.files[0];
+      var slotIdx = i;
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        var base64 = ev.target.result.split(',')[1];
+        // Show preview immediately
+        wrap.style.borderColor = 'var(--ok,#2dd4a0)';
+        wrap.style.borderStyle = 'solid';
+        wrap.style.background = 'var(--ok-bg,rgba(45,212,160,0.1))';
+        iconDiv.innerHTML = '<img src="'+ev.target.result+'" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:9px">';
+        lblEl.style.cssText = 'position:absolute;bottom:4px;left:0;right:0;font-size:9px;color:#fff;text-align:center;background:rgba(0,0,0,0.5);padding:2px 4px;z-index:1';
+        // Count the photo
+        var set = prefix === 'r' ? rPhotos : ePhotos;
+        set.add(slotIdx);
+        if (cntId) document.getElementById(cntId).textContent = set.size + '/' + total;
+        // Upload to Drive
+        var data = CONDUCTORES[conductor] || {};
+        var fecha = new Date().toISOString().slice(0,10);
+        var nombre = (data.plate||'CAM')+'_'+fecha+'_'+lbl.replace(/ /g,'_')+'_'+Date.now()+'.jpg';
+        subirFotoReal(base64, file.type||'image/jpeg', nombre);
+      };
+      reader.readAsDataURL(file);
+    });
+    g.appendChild(wrap);
+  });
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────────
+function setFuel(prefix, el, w) {
+  el.closest('.fuel-opts').querySelectorAll('.fuel-opt').forEach(e => e.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById(prefix + '-fuel-fill').style.width = w;
+}
+
+function doSign(id) {
+  const el = document.getElementById(id);
+  el.textContent = '✓ Firmado · ' + new Date().toLocaleTimeString('es-CL', {hour:'2-digit',minute:'2-digit'});
+  el.classList.add('done');
+}
+
+function setIncidente(el, show) {
+  el.parentElement.querySelectorAll('.tri-btn').forEach(b => b.className = 'tri-btn');
+  el.classList.add(show ? 'bad' : 'ok');
+  document.getElementById('incidente-detail').style.display = show ? '' : 'none';
+}
+
+function setUrg(el) {
+  el.parentElement.querySelectorAll('.tri-btn').forEach(b => { b.className='tri-btn'; });
+  el.classList.add(el.textContent==='Alta'?'bad':el.textContent==='Media'?'warn':'ok');
+}
+
+// ── CERRAR RECEPCIÓN ─────────────────────────────────────────────────
+
+function actualizarResumen() {
+  var data = CONDUCTORES[conductor] || {};
+  var kmEl = document.getElementById('r-km');
+  var combEl = document.querySelector('#r-fuel-opts .fuel-opt.on');
+  var kmVal = kmEl ? kmEl.value : '—';
+  var combVal = combEl ? combEl.textContent.trim() : '—';
+  var safe = function(id, val, color) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.textContent = val;
+      if (color) el.style.color = color;
+    }
+  };
+  safe('r-res-plate', data.plate || '—');
+  safe('r-res-km', kmVal + ' km');
+  safe('r-res-comb', combVal);
+  safe('r-res-docs', rDocsDone.size + '/7');
+  safe('r-res-inv', rInvDone.size + '/10');
+  safe('r-res-fotos', rPhotos ? rPhotos.size : 0);
+  safe('r-res-desvios', rDesvios, rDesvios > 0 ? 'var(--danger)' : 'var(--ok)');
+}
+function cerrarRecepcion() {
+  recepcionCompleta = true;
+  var data = CONDUCTORES[conductor] || {};
+  var kmEl = document.getElementById('r-km');
+  var combEl = document.querySelector('#r-fuel-opts .fuel-opt.on');
+  var obsEl = document.querySelector('#r-paso3 .obs-ta');
+  var kmVal = kmEl ? kmEl.value : '—';
+  var combVal = combEl ? combEl.textContent.trim() : '—';
+
+  // Actualizar resumen paso 4
+  var els = {
+    'r-res-plate': data.plate || '—',
+    'r-res-km': kmVal + ' km',
+    'r-res-comb': combVal,
+    'r-res-docs': rDocsDone.size + '/' + 7,
+    'r-res-inv': rInvDone.size + '/' + 10,
+    'r-res-fotos': (rPhotos && rPhotos.size > 0) ? rPhotos.size : 0,
+    'r-res-desvios': rDesvios
+  };
+  Object.keys(els).forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.textContent = els[id];
+      if (id === 'r-res-desvios') el.style.color = rDesvios > 0 ? 'var(--danger)' : 'var(--ok)';
+    }
+  });
+
+  // Actualizar pantalla de éxito
+  var safe = function(id, fn) { var el = document.getElementById(id); if(el) fn(el); };
+  safe('exito-r-desvios', function(el) { el.textContent = rDesvios; el.style.color = rDesvios > 0 ? 'var(--danger)' : 'var(--ok)'; });
+  safe('exito-r-alerta', function(el) { el.style.display = rDesvios > 0 ? '' : 'none'; });
+  safe('tab-recep-badge', function(el) { el.style.display = ''; });
+  safe('tab-entrega-badge', function(el) { el.style.display = ''; });
+
+  // Actualizar timeline
+  safe('tl1', function(el) { el.className = 'tl-circle done'; el.textContent = '✓'; });
+  safe('tl1-lbl', function(el) { el.className = 'tl-label done'; });
+  safe('tl2', function(el) { el.className = 'tl-circle active-r'; });
+  safe('tl2-lbl', function(el) { el.className = 'tl-label active-r'; });
+  safe('tl-line1', function(el) { el.classList.add('done'); });
+  safe('timeline-msg', function(el) { el.textContent = 'Recepción completada. Completa la entrega al terminar tu turno.'; });
+
+  // Guardar en Sheets
+  apiCall('guardarActa', {
+    tipo: 'Recepcion',
+    patente: data.plate || '',
+    departamento: (data.model||'').split('·').slice(-1)[0].trim(),
+    conductorEntrante: conductor,
+    turnoEntrante: data.turno || 'Dia',
+    kmInicio: kmVal,
+    combustible: combVal,
+    desvios: rDesvios || 0,
+    observaciones: obsEl ? obsEl.value : 'SIN NOVEDAD',
+    firmaConductor: 'Firmado digitalmente',
+    fotos: rPhotos ? rPhotos.size : 0
+  }).then(function(r) {
+    mostrarGuardando(r.ok ? 'Recepcion guardada en Drive' : 'Error: ' + (r.error||''));
+  });
+
+  if (rDesvios > 0) {
+    apiCall('guardarDesvio', {
+      patente: data.plate || '',
+      conductor: conductor,
+      tipo: 'Checklist recepcion',
+      descripcion: window._failedItems ? window._failedItems.join(', ') : 'Desvios al recibir camioneta',
+      nivel: 'medio',
+      turno: data.turno || 'Dia',
+      fotoURL: ''
+    });
+  }
+
+  // Navegar a pantalla de éxito
+  goS('s-exito-recep');
+  if (typeof showTabs === 'function') showTabs(true);
+}
+
+// ── CERRAR ENTREGA ───────────────────────────────────────────────────
+function cerrarEntrega() {
+  // Guardar acta de entrega en Sheets
+  var data = CONDUCTORES[conductor] || {};
+  var kmEl = document.getElementById('e-km');
+  var combEl = document.querySelector('#e-fuel-opts .fuel-opt.on');
+  var obsEl = document.querySelector('#e-paso2 .obs-ta');
+  apiCall('guardarActa', {
+    tipo: 'Entrega',
+    patente: data.plate || '',
+    departamento: (data.model||'').split('·').slice(-1)[0].trim(),
+    conductorSaliente: conductor,
+    conductorEntrante: conductor,
+    turnoEntrante: data.turno || 'Dia',
+    kmFin: kmEl ? kmEl.value : '',
+    combustible: combEl ? combEl.textContent.trim() : '',
+    desvios: eDesvios || 0,
+    observaciones: obsEl ? obsEl.value : 'SIN NOVEDAD',
+    firmaConductor: 'Firmado digitalmente',
+    fotos: ePhotos ? ePhotos.size : 0
+  }).then(function(r) {
+    if (r.ok) mostrarGuardando('Entrega guardada en Drive');
+    else mostrarGuardando('Error: ' + (r.error||''));
+  });
+  if (eDesvios > 0) {
+    apiCall('guardarDesvio', {
+      patente: data.plate || '',
+      conductor: conductor,
+      tipo: 'Checklist entrega',
+      descripcion: 'Desvios detectados al entregar camioneta',
+      nivel: 'medio',
+      turno: data.turno || 'Dia'
+    });
+  }
+  document.getElementById('hora-cierre').textContent = new Date().toLocaleTimeString('es-CL', {hour:'2-digit',minute:'2-digit'});
+  document.getElementById('tl2').className = 'tl-circle done'; document.getElementById('tl2').textContent = '✓';
+  document.getElementById('tl2-lbl').className = 'tl-label done';
+  document.getElementById('tl3').className = 'tl-circle active-e';
+  document.getElementById('tl3-lbl').className = 'tl-label active-e';
+  document.getElementById('tl-line2').classList.add('done');
+  goS('s-exito-entrega');
+}
+
+// ── CONEXIÓN CON GOOGLE SHEETS ─────────────────────────────────
+const API_URL = "https://script.google.com/macros/s/AKfycbyu7Vq3yUdx2K_WlDKh3l4nNWCyAzi0wWkpCD49PJKV67nwUM0GPhG5ee6EwGi3LNAJ0A/exec";
+
+function apiCall(accion, datos) {
+  datos = datos || {};
+  return new Promise(function(resolve) {
+    var cbName = 'cb' + Date.now() + Math.floor(Math.random()*99999);
+    var param = encodeURIComponent(JSON.stringify(datos));
+    var url = API_URL + '?accion=' + encodeURIComponent(accion) + '&param=' + param + '&callback=' + cbName;
+    var done = false;
+    var timer = setTimeout(function() {
+      if (done) return;
+      done = true;
+      limpiar();
+      resolve({ ok: false, error: 'Timeout' });
+    }, 30000);
+    window[cbName] = function(data) {
+      if (done) return;
+      done = true;
+      limpiar();
+      resolve(data);
+    };
+    function limpiar() {
+      clearTimeout(timer);
+      delete window[cbName];
+      var s = document.getElementById(cbName);
+      if (s) s.parentNode.removeChild(s);
+    }
+    var script = document.createElement('script');
+    script.id = cbName;
+    script.onerror = function() {
+      if (done) return;
+      done = true;
+      limpiar();
+      resolve({ ok: false, error: 'Error de red' });
+    };
+    script.src = url;
+    document.head.appendChild(script);
+  });
+}
+
+function mostrarGuardando(msg) {
+  var el = document.getElementById('_toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = '_toast';
+    el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1d27;color:#e8ecf5;padding:10px 20px;border-radius:20px;font-size:13px;font-family:sans-serif;border:1px solid rgba(255,255,255,0.2);z-index:9999;transition:opacity .4s;pointer-events:none';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg || 'Guardando...';
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(function() { el.style.opacity = '0'; }, 2500);
+}
+
+
+// ── ENVÍO REAL A SHEETS ────────────────────────────────────────
+async function enviar() {
+  var totalDesvios = (eDesvios || 0) + (rDesvios || 0);
+  var hasDesvio = totalDesvios > 0;
+  mostrarGuardando("Guardando acta...");
+  var data = CONDUCTORES[conductor] || {};
+  var kmEl = document.querySelector('#e-km') || document.querySelector('.inp[type="number"]');
+  var combEl = document.querySelector('#e-fuel-opts .fuel-opt.on') || document.querySelector('.fuel-opt.on');
+  var obsEl = document.querySelector('#s-e-paso2 .obs-ta') || document.querySelector('.obs-ta');
+  var resultado = await apiCall("guardarActa", {
+    tipo: "Entrega",
+    patente: data.plate || "",
+    departamento: (data.model || "").split(".").pop().trim(),
+    conductorSaliente: conductor,
+    conductorEntrante: conductor,
+    turnoEntrante: data.turno || "Dia",
+    kmFin: kmEl ? kmEl.value : "",
+    combustible: combEl ? combEl.textContent.trim() : "",
+    desvios: totalDesvios,
+    observaciones: obsEl ? obsEl.value : "SIN NOVEDAD",
+    firmaConductor: "Firmado digitalmente",
+    fotos: ePhotos ? ePhotos.size : 0
+  });
+  if (hasDesvio && resultado.ok) {
+    await apiCall("guardarDesvio", {
+      patente: data.plate || "",
+      departamento: (data.model || "").split(".").pop().trim(),
+      conductor: conductor,
+      tipo: "Checklist entrega",
+      descripcion: "Desvios detectados en checklist de entrega",
+      nivel: "medio",
+      turno: data.turno || "Dia"
+    });
+  }
+  var noticeEl = document.getElementById('desvio-notice');
+  if (noticeEl) noticeEl.style.display = hasDesvio ? '' : 'none';
+  var msgEl = document.getElementById('succ-msg');
+  if (msgEl) msgEl.textContent = hasDesvio
+    ? 'Acta enviada. Se detectaron desvios, el mecanico fue notificado.'
+    : 'Acta guardada correctamente. Sin desvios detectados.';
+  var detEl = document.getElementById('succ-detail');
+  if (detEl) detEl.innerHTML =
+    (data.plate || '') + ' ' + ((data.model||'').split('.')[0].trim()) + '<br>' +
+    'Turno ' + (data.turno||'dia') + ' Desvios: ' + totalDesvios + '<br>' +
+    'Fotos: ' + (ePhotos ? ePhotos.size : 0) + ' Guardado en Drive';
+  goS('s-exito');
+  eDesvios = 0; rDesvios = 0;
+  mostrarGuardando("Acta guardada en Drive");
+}
+
+async function enviarFalla() {
+  var tipoEl = document.querySelector('#s-falla select');
+  var descEl = document.querySelector('#s-falla .obs-ta');
+  var tipo = tipoEl ? tipoEl.value : 'Otro';
+  var desc = descEl ? descEl.value : '';
+  var urgBad = document.querySelector('#s-falla .tri-btn.bad');
+  var urgWarn = document.querySelector('#s-falla .tri-btn.warn');
+  var nivel = urgBad ? 'critico' : urgWarn ? 'medio' : 'bajo';
+  var data = CONDUCTORES[conductor] || {};
+  var fotoURL = window._fallaFotoURL || '';
+  mostrarGuardando('Reportando falla...');
+  await apiCall('guardarDesvio', {
+    patente: data.plate || '',
+    departamento: (data.model || '').split('.').pop().trim(),
+    conductor: conductor,
+    tipo: tipo,
+    descripcion: desc,
+    nivel: nivel,
+    turno: data.turno || 'Dia',
+    fotoURL: fotoURL
+  });
+  window._fallaFotoURL = '';
+  mostrarGuardando('Falla reportada al mecanico');
+  goS('s-home');
+}
+
+// Cargar datos reales al hacer login
+async function cargarDatosReales() {
+  const [flota, conductores] = await Promise.all([
+    apiCall("getFlota"),
+    apiCall("getConductores")
+  ]);
+  // Poblar selector de conductores
+  if (conductores.ok && conductores.data.length > 0) {
+    const sel = document.getElementById('sel-conductor');
+    sel.innerHTML = '<option value="">— Seleccionar —</option>';
+    conductores.data.forEach(c => {
+      sel.innerHTML += '<option value="'+c.Nombre+'">'+c.Nombre+'</option>';
+    });
+    sel.disabled = false;
+    // Populate CONDUCTORES with fleet data
+    if (flota.ok && flota.data.length > 0) {
+      flota.data.forEach(function(v) {
+        if (v.ConductorActual) {
+          CONDUCTORES[v.ConductorActual] = {
+            plate: v.Patente || '',
+            model: (v.Marca||'') + ' ' + (v.Modelo||'') + ' ' + (v.Año||'') + ' · ' + (v.Color||'') + ' · ' + (v.Departamento||''),
+            turno: v.TurnoActual || 'Día',
+            km: String(v.KmActual || '0'),
+            comb: v.Combustible || '—'
+          };
+        }
+      });
+    }
+    // If conductor has no vehicle assigned yet, add with empty plate
+    conductores.data.forEach(function(c) {
+      if (!CONDUCTORES[c.Nombre]) {
+        CONDUCTORES[c.Nombre] = {
+          plate: '—',
+          model: c.Departamento || 'Sin camioneta asignada',
+          turno: c.Turno || 'Día',
+          km: '—',
+          comb: '—'
+        };
+      }
+    });
+    // Poblar mapa de conductores con datos reales
+    if (flota.ok) {
+      flota.data.forEach(v => {
+        if (v.ConductorActual) {
+          CONDUCTORES[v.ConductorActual] = {
+            plate: v.Patente,
+            model: `${v.Marca} ${v.Modelo} ${v.Año} · ${v.Color} · ${v.Departamento}`,
+            turno: v.TurnoActual || "Día",
+            km: v.KmActual || "0",
+            comb: v.Combustible || "—"
+          };
+        }
+      });
+    }
+  }
+}
+
+// Llamar al cargar la página
+window.addEventListener('load', cargarDatosReales);
+
+
+// Falla photo handler — called when navigating to s-falla
+function initFallaPhoto() {
+  window._fallaFotoURL = '';
+  var fallaInput = document.getElementById('falla-photo-input');
+  if (!fallaInput) return;
+  fallaInput.onchange = function() {
+    if (!this.files || !this.files[0]) return;
+    var file = this.files[0];
+    var reader = new FileReader();
+    var wrap = document.getElementById('falla-photo-wrap');
+    reader.onload = function(ev) {
+      if (wrap) {
+        wrap.style.borderColor = 'var(--ok,#2dd4a0)';
+        wrap.style.borderStyle = 'solid';
+        wrap.innerHTML = '<img src="'+ev.target.result+'" style="width:100%;height:100%;object-fit:cover;border-radius:9px"><span style="position:absolute;bottom:4px;right:6px;font-size:10px;font-weight:600;color:#fff;background:rgba(0,0,0,0.5);padding:2px 6px;border-radius:8px">✓ Foto lista</span>';
+      }
+      mostrarGuardando('Subiendo foto de falla...');
+      var data = CONDUCTORES[conductor] || {};
+      var fecha = new Date().toISOString().slice(0,10);
+      subirFotoReal(ev.target.result.split(',')[1], file.type||'image/jpeg',
+        (data.plate||'CAM')+'_FALLA_'+fecha+'_'+Date.now()+'.jpg').then(function(r) {
+        if (r && r.ok) { window._fallaFotoURL = r.url || ''; mostrarGuardando('✓ Foto lista'); }
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+}
+
+</script>
+</body>
+</html>
