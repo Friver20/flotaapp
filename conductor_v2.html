@@ -185,6 +185,14 @@
 
   /* EMPTY */
   .empty { text-align: center; padding: 30px 20px; color: var(--text3); font-size: 13px; }
+
+.modal-alerta{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-alerta-inner{background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:24px;max-width:340px;width:100%;text-align:center}
+.modal-alerta-icon{font-size:36px;margin-bottom:12px}
+.modal-alerta-title{font-size:17px;font-weight:600;color:var(--text);margin-bottom:8px}
+.modal-alerta-msg{font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:20px}
+.modal-alerta-btn{width:100%;padding:12px;border-radius:12px;border:none;background:var(--recep,#4f8ef7);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+
 </style>
 </head>
 <body>
@@ -708,7 +716,7 @@ function login() {
   const d = CONDUCTORES[conductor] || {plate:'—', model:'Sin camioneta asignada', turno:'Día', km:'—', comb:'—'};
   // Check if conductor has vehicle assigned
   if (!d.plate || d.plate === '—') {
-    alert('⚠ ' + conductor + ' no tiene una camioneta asignada.\n\nContacta al mecánico para que te asigne una antes de continuar.');
+    showAlerta('Sin camioneta asignada', conductor + ' no tiene una camioneta asignada. Contacta al supervisor para que coordine la asignación.', '🚗');
     return;
   }
   document.getElementById('mi-plate').textContent = d.plate;
@@ -1352,7 +1360,7 @@ function initFallaPhoto() {
 function iniciarChecklist() {
   var camData = CONDUCTORES[conductor] || {};
   if (!camData.plate || camData.plate === '—') {
-    alert('No tienes una camioneta asignada.\nContacta al mecánico para que te asigne una.');
+    showAlerta('Sin camioneta asignada', 'No tienes una camioneta asignada. Contacta al supervisor para que coordine la asignación.', '🚗');
     return false;
   }
   goS('r-paso1');
@@ -1360,6 +1368,24 @@ function iniciarChecklist() {
   return false;
 }
 
+
+function showAlerta(titulo, mensaje, icono) {
+  document.getElementById('modal-alerta-icon').textContent = icono || '⚠️';
+  document.getElementById('modal-alerta-title').textContent = titulo;
+  document.getElementById('modal-alerta-msg').textContent = mensaje;
+  document.getElementById('modal-alerta').style.display = 'flex';
+}
+
 </script>
+
+<div id="modal-alerta" style="display:none" class="modal-alerta" onclick="this.style.display='none'">
+  <div class="modal-alerta-inner">
+    <div class="modal-alerta-icon" id="modal-alerta-icon">⚠️</div>
+    <div class="modal-alerta-title" id="modal-alerta-title">Sin camioneta asignada</div>
+    <div class="modal-alerta-msg" id="modal-alerta-msg"></div>
+    <button class="modal-alerta-btn" onclick="document.getElementById('modal-alerta').style.display='none'">Entendido</button>
+  </div>
+</div>
+
 </body>
 </html>
