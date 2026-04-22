@@ -556,9 +556,10 @@
         </div>
         <div class="fgrp">
           <label class="flbl">Foto (opcional)</label>
-          <div class="photo-slot" style="width:100%;height:70px;aspect-ratio:unset" onclick="this.classList.add('done');this.innerHTML='<svg viewBox=&quot;0 0 24 24&quot;><path d=&quot;M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z&quot;/></svg><span>Foto agregada</span>'">
-            <svg viewBox="0 0 24 24"><path d="M12 15.2A3.2 3.2 0 018.8 12 3.2 3.2 0 0112 8.8a3.2 3.2 0 013.2 3.2 3.2 3.2 0 01-3.2 3.2M20 4h-3.17L15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/></svg>
-            <span>Tomar foto</span>
+          <div style="position:relative;width:100%;height:80px;border:1.5px dashed var(--border2);border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;gap:8px;overflow:hidden" id="falla-photo-wrap">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--text3)"><path d="M12 15.2A3.2 3.2 0 018.8 12 3.2 3.2 0 0112 8.8a3.2 3.2 0 013.2 3.2 3.2 3.2 0 01-3.2 3.2M20 4h-3.17L15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/></svg>
+            <span style="font-size:12px;color:var(--text3)">Fotografiar la falla (opcional)</span>
+            <input type="file" accept="image/*" capture="environment" id="falla-photo-input" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
           </div>
         </div>
         <button class="btn btn-danger" onclick="alert('Falla reportada. Mecánico notificado.');goS('s-home')">Reportar al mecánico</button>
@@ -704,7 +705,7 @@ let recepcionCompleta = false;
 function login() {
   conductor = document.getElementById('sel-conductor').value;
   if (!conductor) return;
-  const d = CONDUCTORES[conductor];
+  const d = CONDUCTORES[conductor] || {plate:'—', model:'Sin camioneta asignada', turno:'Día', km:'—', comb:'—'};
   document.getElementById('mi-plate').textContent = d.plate;
   document.getElementById('mi-model').textContent = d.model;
   document.getElementById('mi-km').textContent = d.km + ' km';
@@ -1206,7 +1207,7 @@ async function enviar() {
 }
 
 async function enviarFalla() {
-  const tipo = document.querySelector('#s-falla .fsel')?.value || "Otro";
+  const tipo = document.querySelector('#s-falla select')?.value || "Otro";
   const desc = document.querySelector('#s-falla .obs-ta')?.value || "";
   const data = CONDUCTORES[conductor] || {};
   mostrarGuardando("Reportando falla...");
@@ -1237,6 +1238,32 @@ async function cargarDatosReales() {
       sel.innerHTML += '<option value="'+c.Nombre+'">'+c.Nombre+'</option>';
     });
     sel.disabled = false;
+    // Populate CONDUCTORES with fleet data
+    if (flota.ok && flota.data.length > 0) {
+      flota.data.forEach(function(v) {
+        if (v.ConductorActual) {
+          CONDUCTORES[v.ConductorActual] = {
+            plate: v.Patente || '',
+            model: (v.Marca||'') + ' ' + (v.Modelo||'') + ' ' + (v.Año||'') + ' · ' + (v.Color||'') + ' · ' + (v.Departamento||''),
+            turno: v.TurnoActual || 'Día',
+            km: String(v.KmActual || '0'),
+            comb: v.Combustible || '—'
+          };
+        }
+      });
+    }
+    // If conductor has no vehicle assigned yet, add with empty plate
+    conductores.data.forEach(function(c) {
+      if (!CONDUCTORES[c.Nombre]) {
+        CONDUCTORES[c.Nombre] = {
+          plate: '—',
+          model: c.Departamento || 'Sin camioneta asignada',
+          turno: c.Turno || 'Día',
+          km: '—',
+          comb: '—'
+        };
+      }
+    });
     // Poblar mapa de conductores con datos reales
     if (flota.ok) {
       flota.data.forEach(v => {
@@ -1256,6 +1283,33 @@ async function cargarDatosReales() {
 
 // Llamar al cargar la página
 window.addEventListener('load', cargarDatosReales);
+
+
+// Falla photo handler
+document.addEventListener('DOMContentLoaded', function() {
+  var fallaInput = document.getElementById('falla-photo-input');
+  if (fallaInput) {
+    fallaInput.addEventListener('change', function() {
+      if (!this.files || !this.files[0]) return;
+      var file = this.files[0];
+      var reader = new FileReader();
+      var wrap = document.getElementById('falla-photo-wrap');
+      reader.onload = function(ev) {
+        if (wrap) {
+          wrap.style.borderColor = 'var(--ok,#2dd4a0)';
+          wrap.style.borderStyle = 'solid';
+          wrap.innerHTML = '<img src="'+ev.target.result+'" style="width:100%;height:100%;object-fit:cover;border-radius:9px"><span style="position:absolute;bottom:4px;right:6px;font-size:10px;font-weight:600;color:#fff;background:rgba(0,0,0,0.5);padding:2px 6px;border-radius:8px">✓ Foto lista</span>';
+        }
+        mostrarGuardando('Subiendo foto de falla...');
+        var data = CONDUCTORES[conductor] || {};
+        var fecha = new Date().toISOString().slice(0,10);
+        subirFotoReal(ev.target.result.split(',')[1], file.type||'image/jpeg', 
+          (data.plate||'CAM')+'_FALLA_'+fecha+'_'+Date.now()+'.jpg');
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+});
 
 </script>
 </body>
