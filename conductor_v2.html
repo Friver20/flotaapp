@@ -706,6 +706,11 @@ function login() {
   conductor = document.getElementById('sel-conductor').value;
   if (!conductor) return;
   const d = CONDUCTORES[conductor] || {plate:'—', model:'Sin camioneta asignada', turno:'Día', km:'—', comb:'—'};
+  // Check if conductor has vehicle assigned
+  if (!d.plate || d.plate === '—') {
+    alert('⚠ ' + conductor + ' no tiene una camioneta asignada.\n\nContacta al mecánico para que te asigne una antes de continuar.');
+    return;
+  }
   document.getElementById('mi-plate').textContent = d.plate;
   document.getElementById('mi-model').textContent = d.model;
   document.getElementById('mi-km').textContent = d.km + ' km';
@@ -1348,10 +1353,11 @@ function iniciarChecklist() {
   var camData = CONDUCTORES[conductor] || {};
   if (!camData.plate || camData.plate === '—') {
     alert('No tienes una camioneta asignada.\nContacta al mecánico para que te asigne una.');
-    return;
+    return false;
   }
   goS('r-paso1');
   showTabs(true);
+  return false;
 }
 
 </script>
