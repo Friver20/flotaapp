@@ -710,6 +710,8 @@ function buildOTs(list){
       try { fechaStr = new Date(fechaIngreso).toLocaleDateString('es-CL'); } catch(e) { fechaStr = fechaIngreso; }
     }
 
+    el.dataset.numot = numOT;
+    el.dataset.patente = patente;
     el.innerHTML = 
       '<div style="font-family:DM Mono,monospace;font-size:13px;font-weight:500;color:var(--ot);margin-bottom:6px">'+numOT+'</div>'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'+
@@ -730,7 +732,7 @@ function buildOTs(list){
         (km?'<span>📍 '+km+' km</span>':'')+
       '</div>'+
       (estadoKey==='abierta'||estadoKey==='en taller'||estadoKey==='en-taller'?
-        '<button class="btn btn-mec" style="padding:10px;font-size:13px" onclick="cerrarOT(''+numOT+'',''+patente+'')">Cerrar OT · Liberar camioneta →</button>':'');
+        '<button class="btn btn-mec" style="padding:10px;font-size:13px" onclick="cerrarOT(this)">Cerrar OT · Liberar camioneta →</button>':'');
 
     c.appendChild(el);
   });
@@ -1332,6 +1334,30 @@ async function cargarAlertasMantencion() {
 }
 
 window.addEventListener('load', function() { cargarDatosReales(); cargarAlertasMantencion(); });
+
+
+async function cerrarOT(btnOrNumOT, patente) {
+  var numOT, plate;
+  if (typeof btnOrNumOT === 'string') {
+    numOT = btnOrNumOT; plate = patente;
+  } else {
+    var card = btnOrNumOT.parentElement;
+    while (card && !card.dataset.numot) card = card.parentElement;
+    numOT = card ? card.dataset.numot : '';
+    plate = card ? card.dataset.patente : '';
+  }
+  if (!numOT) { mostrarGuardando('Error: OT no encontrada'); return; }
+  var km = prompt('Km de salida del taller:') || '';
+  var costo = prompt('Costo de la reparacion (opcional):') || '';
+  mostrarGuardando('Cerrando OT...');
+  var res = await apiCall('cerrarOT', { numeroOT: numOT, patente: plate, kmSalida: km, costo: costo });
+  if (res.ok) {
+    mostrarGuardando('OT cerrada y camioneta liberada');
+    await cargarDatosReales();
+  } else {
+    mostrarGuardando('Error: ' + (res.error || ''));
+  }
+}
 
 </script>
 </body>
