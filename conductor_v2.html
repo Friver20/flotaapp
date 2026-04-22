@@ -307,8 +307,8 @@
           Registra el estado en que <b>recibes</b> la camioneta. Esto te protege ante cualquier daño previo.
         </div>
         <div class="fgrp">
-          <label class="flbl">Camioneta</label>
-          <select class="sel" id="r-sel-cam"><option>CD-3301 · Ford Ranger 2023</option><option>AB-5512 · Toyota Hilux 2022</option><option>GH-1180 · Toyota Hilux 2021</option></select>
+          <label class="flbl">Camioneta asignada</label>
+          <div id="r-cam-display" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-weight:500;font-family:'DM Mono',monospace;color:var(--text)">—</div>
         </div>
         <div class="fgrp">
           <label class="flbl">Km al recibir</label>
@@ -718,6 +718,13 @@ function login() {
   const app = document.getElementById('screen-app');
   app.style.display = 'flex';
   buildDocs(); buildInv(); buildSegActiva(); buildEstadoEntrega(); buildSegActivaEntrega();
+  // Show assigned vehicle in r-paso1
+  var camDisplay = document.getElementById('r-cam-display');
+  if (camDisplay) {
+    var camData = CONDUCTORES[conductor] || {};
+    camDisplay.textContent = camData.plate ? camData.plate + ' · ' + (camData.model||'').split('·')[0].trim() : 'Sin camioneta asignada';
+    camDisplay.style.color = camData.plate && camData.plate !== '—' ? 'var(--text)' : 'var(--text3)';
+  }
   buildPhotos('r-photos', R_PHOTOS, 'r', 'r-photo-cnt', R_PHOTOS.length);
   buildPhotos('e-photos', E_PHOTOS, 'e', 'e-photo-cnt', E_PHOTOS.length);
 }
@@ -1028,7 +1035,7 @@ function cerrarRecepcion() {
   // Guardar en Sheets
   apiCall('guardarActa', {
     tipo: 'Recepcion',
-    patente: data.plate || '',
+    patente: data.plate && data.plate !== '—' ? data.plate : '',
     departamento: (data.model||'').split('·').slice(-1)[0].trim(),
     conductorEntrante: conductor,
     turnoEntrante: data.turno || 'Dia',
@@ -1044,7 +1051,7 @@ function cerrarRecepcion() {
 
   if (rDesvios > 0) {
     apiCall('guardarDesvio', {
-      patente: data.plate || '',
+      patente: data.plate && data.plate !== '—' ? data.plate : '',
       conductor: conductor,
       tipo: 'Checklist recepcion',
       descripcion: window._failedItems ? window._failedItems.join(', ') : 'Desvios al recibir camioneta',
