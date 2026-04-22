@@ -346,7 +346,7 @@ function startCountdown(){
 }
 
 function updateMetrics(){
-  const asig=FLEET.filter(v=>v.estado_sup==='asignada').length;
+  const asig=FLEET.filter(v=>v.estado_sup==='asignada'||v.estado_sup==='asignada-dia').length;
   const pend=FLEET.filter(v=>v.estado_sup==='pendiente').length;
   const nodis=FLEET.filter(v=>v.estado_sup==='no-disponible').length;
   document.getElementById('m-asig').textContent=asig;
@@ -383,7 +383,8 @@ function buildFleet(list){
       const card=document.createElement('div');
       card.className='assign-card '+v.estado_sup;
       // Badge estado sup
-      const supBadge=v.estado_sup==='asignada'?'<span class="badge badge-green">✓ Asignada</span>':
+      const supBadge=v.estado_sup==='asignada'?'<span class="badge badge-green">✓ Asignada noche</span>':
+        v.estado_sup==='asignada-dia'?'<span class="badge badge-amber">☀ Asignada día</span>':
         v.estado_sup==='no-disponible'?'<span class="badge badge-red">No disponible</span>':
         '<span class="badge badge-sup">Pendiente</span>';
       // Semáforo mecánico compacto
@@ -396,6 +397,8 @@ function buildFleet(list){
         badItems>0?`<span style="color:var(--red);font-size:11px">${badItems} ítem${badItems>1?'s':''} con problema</span>`:
         warnItems>0?`<span style="color:var(--amber);font-size:11px">${warnItems} ítem${warnItems>1?'s':''} regular</span>`:
         '<span style="color:var(--green);font-size:11px">Todos los ítems OK</span>';
+      const conductorDiaRow = v.conductor_dia
+        ? `<div style="font-size:12px;color:var(--amber);margin-top:2px;font-weight:500">☀ Turno día: ${v.conductor_dia}</div>` : '';
       const conductorRow=v.estado_sup==='asignada'?
         `<div style="font-size:12px;color:var(--sup);margin-top:4px;font-weight:500">☾ ${v.conductor_noche}</div>`:'';
       card.innerHTML=`
@@ -415,7 +418,7 @@ function buildFleet(list){
           <span>Km: <b style="color:var(--text2)">${v.km_mec||v.km||'—'}</b></span>
           <span>Comb: <b style="color:var(--text2)">${v.comb_mec||v.comb||'—'}</b></span>
         </div>
-        ${conductorRow}`;
+        ${conductorDiaRow}${conductorRow}`;
       if(v.estado_mec!=='taller') card.onclick=()=>abrirDetalle(v.plate);
       c.appendChild(card);
     });
@@ -424,7 +427,7 @@ function buildFleet(list){
 
 function filterFleet(btn,f){
   document.querySelectorAll('#s-home .fbtn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
-  buildFleet(f==='todas'?FLEET:FLEET.filter(v=>v.estado_sup===f));
+  buildFleet(f==='todas'?FLEET:FLEET.filter(v=>f==='asignada'?(v.estado_sup==='asignada'||v.estado_sup==='asignada-dia'):v.estado_sup===f));
 }
 
 function abrirDetalle(plate){
@@ -737,7 +740,9 @@ async function cargarDatosReales() {
         km_mec: String(v.KmActual || '—'),
         comb_mec: v.Combustible || '—',
         estado_mec: estadoMec,
-        estado_sup: 'pendiente',
+        estado_sup: v.ConductorActual ? 'asignada-dia' : 'pendiente',
+        conductor_dia: v.ConductorActual || null,
+        turno_dia: v.TurnoActual || null,
         conductor_noche: null,
         desvios: [],
         mec_resumen: estadoMec === 'taller' ? 'En taller' : 'Sin observaciones técnicas.',
