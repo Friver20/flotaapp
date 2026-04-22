@@ -858,6 +858,12 @@ async function asignarConductorDia(plate) {
   if (!sel || !sel.value) { mostrarGuardando('Selecciona un conductor primero'); return; }
   const conductor = sel.value;
   // Check if camioneta has unclosed night shift
+  // Check if conductor already has a vehicle assigned
+  var conductorYaAsignado = FLEET.find(function(x) { return x.conductor === conductor && x.plate !== plate; });
+  if (conductorYaAsignado) {
+    mostrarGuardando('⚠ ' + conductor + ' ya tiene asignada la camioneta ' + conductorYaAsignado.plate);
+    return;
+  }
   var vehiculo = FLEET.find(function(x) { return x.plate === plate; });
   if (vehiculo && vehiculo.conductor) {
     var forzar = confirm('⚠ ' + vehiculo.conductor + ' no realizó cierre de turno noche.\n\nEsto es una falta al protocolo de entrega.\n\n¿Deseas asignar la camioneta igual al turno día?');

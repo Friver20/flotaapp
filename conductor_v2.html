@@ -1343,6 +1343,17 @@ function initFallaPhoto() {
   };
 }
 
+
+function iniciarChecklist() {
+  var camData = CONDUCTORES[conductor] || {};
+  if (!camData.plate || camData.plate === '—') {
+    alert('No tienes una camioneta asignada.\nContacta al mecánico para que te asigne una.');
+    return;
+  }
+  goS('r-paso1');
+  showTabs(true);
+}
+
 </script>
 </body>
 </html>
