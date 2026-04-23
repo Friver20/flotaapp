@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>FlotaApp · Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08090f;--bg2:#0f1119;--bg3:#161a26;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#eceef8;--text2:#7d82a0;--text3:#4c5070;
+  --green:#22c55e;--green-bg:rgba(34,197,94,0.1);
+  --amber:#f59e0b;--amber-bg:rgba(245,158,11,0.1);
+  --red:#ef4444;--red-bg:rgba(239,68,68,0.1);
+  --blue:#3b82f6;--blue-bg:rgba(59,130,246,0.1);
+  --mec:#10b981;--mec-bg:rgba(16,185,129,0.1);
+  --sup:#8b5cf6;--sup-bg:rgba(139,92,246,0.1);
+  --cond:#f97316;--cond-bg:rgba(249,115,22,0.1);
+  --admin:#e2e8f0;
+  --radius:14px;--radius-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px}
+.app{max-width:430px;margin:0 auto;padding:0 0 30px}
+
+/* HEADER */
+.header{background:linear-gradient(160deg,#08090f,#0d0f1e);padding:52px 20px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+.header-logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.logo-icon svg{width:20px;height:20px;fill:#fff}
+.logo-txt{font-size:22px;font-weight:600;color:var(--text)}
+.admin-tag{background:rgba(255,255,255,0.1);color:var(--text2);font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;border:1px solid var(--border2)}
+.header-sub{font-size:12px;color:var(--text3);margin-top:2px}
+.turno-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.turno-chip{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px}
+.chip-dia{background:rgba(245,158,11,0.15);color:var(--amber)}
+.chip-noche{background:rgba(139,92,246,0.15);color:var(--sup)}
+.chip-mec{background:var(--mec-bg);color:var(--mec)}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:16px}
+.met{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.met-val{font-size:28px;font-weight:600;margin-bottom:2px}
+.met-lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px}
+.met-sub{font-size:11px;margin-top:4px}
+
+/* SECTION */
+.section{padding:0 16px;margin-bottom:20px}
+.section-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+
+/* APP CARDS */
+.app-card{border-radius:var(--radius);padding:16px;margin-bottom:10px;cursor:pointer;text-decoration:none;display:block;transition:transform .15s,opacity .15s;border:1px solid transparent}
+.app-card:active{transform:scale(0.98);opacity:.9}
+.app-card-conductor{background:linear-gradient(135deg,#1a0e00,#2a1800);border-color:rgba(249,115,22,0.3)}
+.app-card-mecanico{background:linear-gradient(135deg,#001a0e,#002a1a);border-color:rgba(16,185,129,0.3)}
+.app-card-supervisor{background:linear-gradient(135deg,#0e001a,#1a002a);border-color:rgba(139,92,246,0.3)}
+.app-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.app-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center}
+.app-icon svg{width:22px;height:22px;fill:#fff}
+.app-icon-cond{background:var(--cond)}
+.app-icon-mec{background:var(--mec)}
+.app-icon-sup{background:var(--sup)}
+.app-name{font-size:17px;font-weight:600;color:var(--text);margin-bottom:2px}
+.app-desc{font-size:12px;color:var(--text2);line-height:1.4}
+.app-url{font-size:10px;font-family:DM Mono,monospace;color:var(--text3);margin-top:8px;padding:5px 8px;background:rgba(0,0,0,0.3);border-radius:6px;display:flex;align-items:center;justify-content:space-between}
+.app-url span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.copy-btn{font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;border:none;cursor:pointer;flex-shrink:0;margin-left:8px;font-family:'DM Sans',sans-serif;transition:all .15s}
+.copy-btn-cond{background:var(--cond-bg);color:var(--cond)}
+.copy-btn-mec{background:var(--mec-bg);color:var(--mec)}
+.copy-btn-sup{background:var(--sup-bg);color:var(--sup)}
+.app-stats{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.app-stat{font-size:11px;padding:3px 8px;border-radius:10px;font-weight:500}
+.stat-cond{background:var(--cond-bg);color:var(--cond)}
+.stat-mec{background:var(--mec-bg);color:var(--mec)}
+.stat-sup{background:var(--sup-bg);color:var(--sup)}
+.stat-warn{background:var(--amber-bg);color:var(--amber)}
+.stat-ok{background:var(--green-bg);color:var(--green)}
+.stat-red{background:var(--red-bg);color:var(--red)}
+
+/* ALERT CARDS */
+.alert-card{background:var(--bg2);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;border:1px solid var(--border)}
+.alert-card.critica{border-color:rgba(239,68,68,0.4);background:linear-gradient(135deg,var(--bg2) 80%,var(--red-bg))}
+.alert-card.media{border-color:rgba(245,158,11,0.35)}
+.alert-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.alert-content{flex:1}
+.alert-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px}
+.alert-desc{font-size:11px;color:var(--text2);line-height:1.4}
+.alert-time{font-size:10px;color:var(--text3);margin-top:3px}
+.badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0}
+.badge-red{background:var(--red-bg);color:var(--red)}
+.badge-amber{background:var(--amber-bg);color:var(--amber)}
+.badge-green{background:var(--green-bg);color:var(--green)}
+.badge-blue{background:var(--blue-bg);color:var(--blue)}
+.badge-gray{background:var(--bg3);color:var(--text2)}
+.badge-purple{background:var(--sup-bg);color:var(--sup)}
+
+/* SHEET LINK */
+.sheet-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;text-decoration:none;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s}
+.sheet-card:active{border-color:var(--green)}
+.sheet-icon{width:40px;height:40px;background:#1e4620;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sheet-icon svg{width:22px;height:22px}
+.sheet-title{font-size:14px;font-weight:500;color:var(--text)}
+.sheet-desc{font-size:11px;color:var(--text2);margin-top:1px}
+.sheet-arrow{color:var(--text3);font-size:18px;margin-left:auto}
+
+/* STATS GRID */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px}
+.stat-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center}
+.stat-box-val{font-size:20px;font-weight:600}
+.stat-box-lbl{font-size:10px;color:var(--text3);margin-top:1px;line-height:1.2}
+
+/* TOAST */
+#_toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a1d27;color:#e8ecf5;padding:10px 20px;border-radius:20px;font-size:13px;border:1px solid rgba(255,255,255,0.15);z-index:9999;transition:opacity .4s;pointer-events:none;opacity:0;white-space:nowrap}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--border);margin:4px 0 16px}
+
+/* REFRESH */
+.refresh-btn{width:100%;padding:12px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--bg2);color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;margin-top:4px}
+.refresh-btn:active{background:var(--bg3)}
+.refresh-btn svg{width:16px;height:16px;fill:currentColor}
+
+/* GESTIÓN */
+.nav-tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0}
+.nav-tabs::-webkit-scrollbar{display:none}
+.nav-tab{padding:10px 16px;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s;font-family:'DM Sans',sans-serif;border-top:none;border-left:none;border-right:none;background:none}
+.nav-tab.on{color:var(--text);border-bottom-color:var(--admin)}
+.reg-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px}
+.reg-card.inactivo{opacity:.5}
+.reg-name{font-size:14px;font-weight:500;color:var(--text);margin-bottom:2px}
+.reg-detail{font-size:12px;color:var(--text2)}
+.reg-actions{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.reg-btn{flex:1;padding:7px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--text2);transition:all .15s}
+.reg-btn.edit{background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.3);color:var(--blue)}
+.reg-btn.deact{background:var(--red-bg);border-color:rgba(239,68,68,0.3);color:var(--red)}
+.reg-btn.activ{background:var(--green-bg);border-color:rgba(34,197,94,0.3);color:var(--green)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;display:flex;align-items:flex-end;padding:0}
+.modal-inner{background:var(--bg2);border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:430px;margin:0 auto;max-height:85vh;overflow-y:auto}
+.modal-inner::-webkit-scrollbar{display:none}
+.modal-title{font-size:18px;font-weight:600;color:var(--text);margin-bottom:4px}
+.modal-sub{font-size:12px;color:var(--text2);margin-bottom:16px}
+.modal-handle{width:40px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 16px}
+
+</style>
+</head>
+<body>
+<div class="app">
+
+<div id="s-main" style="display:flex;flex-direction:column;min-height:100%">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-top">
+      <div class="header-logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2a3 3 0 006 0h6a3 3 0 006 0h2v-5l-3-4zm-.5 1.5L21.46 12H17V9.5h2.5zM6 18.5A1.5 1.5 0 014.5 17 1.5 1.5 0 016 15.5a1.5 1.5 0 010 3zm13 0a1.5 1.5 0 010-3 1.5 1.5 0 010 3z"/></svg>
+        </div>
+        <div class="logo-txt">FlotaApp</div>
+      </div>
+      <span class="admin-tag">Admin</span>
+    </div>
+    <div class="header-sub" id="header-fecha">Cargando...</div>
+    <div class="turno-row">
+      <span class="turno-chip chip-dia">☀ Turno día</span>
+      <span class="turno-chip chip-mec" id="chip-desvios">— desvíos</span>
+      <span class="turno-chip chip-noche" id="chip-ot">— OT activas</span>
+    </div>
+  </div>
+
+  <!-- MÉTRICAS -->
+  <div class="metrics">
+    <div class="met">
+      <div class="met-val" style="color:var(--blue)" id="m-flota">—</div>
+      <div class="met-lbl">Flota total</div>
+      <div class="met-sub" style="color:var(--green)" id="m-activas">— activas</div>
+    </div>
+    <div class="met">
+      <div class="met-val" style="color:var(--amber)" id="m-desvios">—</div>
+      <div class="met-lbl">Desvíos pendientes</div>
+      <div class="met-sub" style="color:var(--red)" id="m-criticos">— críticos</div>
+    </div>
+    <div class="met">
+      <div class="met-val" style="color:var(--mec)" id="m-actas">—</div>
+      <div class="met-lbl">Actas hoy</div>
+      <div class="met-sub" style="color:var(--text3)" id="m-actas-sub">—</div>
+    </div>
+    <div class="met">
+      <div class="met-val" style="color:var(--sup)" id="m-ot">—</div>
+      <div class="met-lbl">OT activas</div>
+      <div class="met-sub" style="color:var(--amber)" id="m-ot-sub">— en taller</div>
+    </div>
+  </div>
+
+  <!-- ALERTAS -->
+  <div class="section" id="alertas-section">
+    <div class="section-title">Alertas activas</div>
+    <div id="alertas-list">
+      <div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Cargando alertas...</div>
+    </div>
+  </div>
+
+  <div class="divider" style="margin:0 16px 16px"></div>
+
+  <!-- ACCESO A LAS APPS -->
+  <div class="section">
+    <div class="section-title">Acceso a las apps</div>
+
+    <!-- CONDUCTOR -->
+    <div class="app-card app-card-conductor">
+      <div class="app-card-top">
+        <div>
+          <div class="app-name">App Conductor</div>
+          <div class="app-desc">Checklist recepción/entrega · Pendiente de validación · Fotos a Drive</div>
+        </div>
+        <div class="app-icon app-icon-cond">
+          <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2a3 3 0 006 0h6a3 3 0 006 0h2v-5l-3-4zm-.5 1.5L21.46 12H17V9.5h2.5zM6 18.5A1.5 1.5 0 014.5 17 1.5 1.5 0 016 15.5a1.5 1.5 0 010 3zm13 0a1.5 1.5 0 010-3 1.5 1.5 0 010 3z"/></svg>
+        </div>
+      </div>
+      <div class="app-stats">
+        <span class="app-stat stat-cond" id="stat-conductores">— conductores</span>
+        <span class="app-stat stat-ok">Operativo</span>
+      </div>
+      <div class="app-url">
+        <span>friver20.github.io/flotaapp/conductor_v2_validacion_pendiente.html</span>
+        <button class="copy-btn copy-btn-cond" onclick="copiar('https://friver20.github.io/flotaapp/conductor_v2_validacion_pendiente.html','Conductor')">Copiar</button>
+      </div>
+      <button class="refresh-btn" style="margin-top:8px;border-color:rgba(249,115,22,0.3);color:var(--cond)" onclick="abrirApp('https://friver20.github.io/flotaapp/conductor_v2_validacion_pendiente.html')">
+        <svg viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+        Abrir app
+      </button>
+    </div>
+
+    <!-- MECÁNICO -->
+    <div class="app-card app-card-mecanico">
+      <div class="app-card-top">
+        <div>
+          <div class="app-name">App Mecánico</div>
+          <div class="app-desc">Validar pendientes día · Aprobar o fuera de línea · OT · Panel de flota</div>
+        </div>
+        <div class="app-icon app-icon-mec">
+          <svg viewBox="0 0 24 24"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>
+        </div>
+      </div>
+      <div class="app-stats">
+        <span class="app-stat stat-mec" id="stat-desvios-mec">— desvíos</span>
+        <span class="app-stat stat-warn" id="stat-ot-mec">— OT abiertas</span>
+      </div>
+      <div class="app-url">
+        <span>friver20.github.io/flotaapp/mecanico_ot_validacion_pendiente.html</span>
+        <button class="copy-btn copy-btn-mec" onclick="copiar('https://friver20.github.io/flotaapp/mecanico_ot_validacion_pendiente.html','Mecánico')">Copiar</button>
+      </div>
+      <button class="refresh-btn" style="margin-top:8px;border-color:rgba(16,185,129,0.3);color:var(--mec)" onclick="abrirApp('https://friver20.github.io/flotaapp/mecanico_ot_validacion_pendiente.html')">
+        <svg viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+        Abrir app
+      </button>
+    </div>
+
+    <!-- SUPERVISOR -->
+    <div class="app-card app-card-supervisor">
+      <div class="app-card-top">
+        <div>
+          <div class="app-name">App Supervisor</div>
+          <div class="app-desc">Asignación noche · Validación nocturna · Fuera de línea · Historial</div>
+        </div>
+        <div class="app-icon app-icon-sup">
+          <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l5 2.18V11c0 3.5-2.33 6.79-5 7.93-2.67-1.14-5-4.43-5-7.93V7.18L12 5z"/></svg>
+        </div>
+      </div>
+      <div class="app-stats">
+        <span class="app-stat stat-sup" id="stat-supervisores">— supervisores</span>
+        <span class="app-stat stat-ok">Operativo</span>
+      </div>
+      <div class="app-url">
+        <span>friver20.github.io/flotaapp/supervisor_validacion_pendiente.html</span>
+        <button class="copy-btn copy-btn-sup" onclick="copiar('https://friver20.github.io/flotaapp/supervisor_validacion_pendiente.html','Supervisor')">Copiar</button>
+      </div>
+      <button class="refresh-btn" style="margin-top:8px;border-color:rgba(139,92,246,0.3);color:var(--sup)" onclick="abrirApp('https://friver20.github.io/flotaapp/supervisor_validacion_pendiente.html')">
+        <svg viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+        Abrir app
+      </button>
+    </div>
+  </div>
+
+  <!-- FLOTA + GESTIÓN BUTTONS -->
+  <div class="section">
+    <button class="refresh-btn" onclick="abrirFlota()" style="border-color:rgba(59,130,246,0.4);color:var(--blue);margin-bottom:6px">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2a3 3 0 006 0h6a3 3 0 006 0h2v-5l-3-4zm-.5 1.5L21.46 12H17V9.5h2.5zM6 18.5A1.5 1.5 0 014.5 17 1.5 1.5 0 016 15.5a1.5 1.5 0 010 3zm13 0a1.5 1.5 0 010-3 1.5 1.5 0 010 3z"/></svg>
+      Ver estado de la flota
+    </button>
+    <button class="refresh-btn" onclick="abrirGestion()" style="border-color:rgba(255,255,255,0.15);color:var(--text)">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+      Gestionar equipos y personas
+    </button>
+  </div>
+
+  <!-- GOOGLE SHEET -->
+  <div class="section">
+    <div class="section-title">Base de datos</div>
+    <a class="sheet-card" href="https://docs.google.com/spreadsheets/d/1V2JPowxzoFq3zwfR0trrTM3G0qZ8VDcutHX5tvwgrVw/edit" target="_blank">
+      <div class="sheet-icon">
+        <svg viewBox="0 0 24 24" fill="none">
+          <rect width="24" height="24" rx="4" fill="#1e4620"/>
+          <path d="M7 8h10M7 12h10M7 16h6" stroke="#4ade80" stroke-width="1.5" stroke-linecap="round"/>
+          <rect x="13" y="13" width="4" height="4" rx="1" fill="#4ade80"/>
+        </svg>
+      </div>
+      <div>
+        <div class="sheet-title">Google Sheet · FlotaApp</div>
+        <div class="sheet-desc">Actas · Desvíos · OT · Flota · Conductores</div>
+      </div>
+      <div class="sheet-arrow">↗</div>
+    </a>
+
+    <a class="sheet-card" href="https://drive.google.com/drive/folders" target="_blank">
+      <div class="sheet-icon" style="background:#1a2a4a">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L2 19h20L12 2z" fill="#3b82f6" opacity=".3"/>
+          <path d="M2 19h20" stroke="#60a5fa" stroke-width="1.5"/>
+          <path d="M12 2L2 19" stroke="#60a5fa" stroke-width="1.5"/>
+          <path d="M12 2l10 17" stroke="#60a5fa" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="sheet-title">Google Drive · FlotaApp</div>
+        <div class="sheet-desc">Fotos organizadas por fecha y patente</div>
+      </div>
+      <div class="sheet-arrow">↗</div>
+    </a>
+  </div>
+
+  <!-- BOTÓN ACTUALIZAR -->
+  <div class="section">
+    <button class="refresh-btn" onclick="cargarDatos()">
+      <svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+      Actualizar datos
+    </button>
+  </div>
+
+
+
+
+  </div><!-- /s-main -->
+
+<div id="s-flota" style="display:none;min-height:100vh;background:var(--bg)">
+  <div style="padding:52px 20px 14px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:20px;font-weight:600;color:var(--text)">Estado de flota</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px" id="flota-fecha">—</div>
+      </div>
+      <button onclick="document.getElementById('s-flota').style.display='none';document.getElementById('s-main').style.display=''" 
+        style="background:var(--bg3);border:1px solid var(--border2);color:var(--text2);padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">← Volver</button>
+    </div>
+  </div>
+
+  <!-- Resumen -->
+  <div style="padding:14px">
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px">
+      <div class="met" style="background:var(--bg2);border:1px solid var(--border)">
+        <div class="mv" style="color:var(--blue)" id="fs-total">0</div>
+        <div class="ml">Total flota</div>
+      </div>
+      <div class="met" style="background:var(--bg2);border:1px solid var(--border)">
+        <div class="mv" style="color:var(--green)" id="fs-operativas">0</div>
+        <div class="ml">Operativas</div>
+      </div>
+      <div class="met" style="background:var(--bg2);border:1px solid var(--border)">
+        <div class="mv" style="color:var(--amber)" id="fs-asignadas">0</div>
+        <div class="ml">Asignadas</div>
+      </div>
+      <div class="met" style="background:var(--bg2);border:1px solid var(--border)">
+        <div class="mv" style="color:var(--text3)" id="fs-libres">0</div>
+        <div class="ml">Disponibles</div>
+      </div>
+      <div class="met" style="background:var(--bg2);border:1px solid var(--border)">
+        <div class="mv" style="color:var(--sup)" id="fs-pend">0</div>
+        <div class="ml">Pend. validación</div>
+      </div>
+      <div class="met" style="background:var(--bg2);border:1px solid var(--border)">
+        <div class="mv" style="color:var(--red)" id="fs-fuera">0</div>
+        <div class="ml">Fuera de línea</div>
+      </div>
+      <div class="met" style="background:var(--bg2);border:1px solid var(--border)">
+        <div class="mv" style="color:var(--blue)" id="fs-taller-ext">0</div>
+        <div class="ml">Mantención externa</div>
+      </div>
+      <div class="met" style="background:var(--bg2);border:1px solid var(--border)">
+        <div class="mv" style="color:var(--mec)" id="fs-taller-int">0</div>
+        <div class="ml">Mantención interna</div>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-row" style="margin-bottom:12px">
+      <button class="fbtn on" onclick="filterFlotaAdmin(this,'todas')">Todas</button>
+      <button class="fbtn" onclick="filterFlotaAdmin(this,'operativa')">Operativas</button>
+      <button class="fbtn" onclick="filterFlotaAdmin(this,'asignada')">Asignadas</button>
+      <button class="fbtn" onclick="filterFlotaAdmin(this,'libre')">Disponibles</button>
+      <button class="fbtn" onclick="filterFlotaAdmin(this,'pendiente-validacion')">Pend. validación</button>
+      <button class="fbtn" onclick="filterFlotaAdmin(this,'fuera-linea')">Fuera de línea</button>
+      <button class="fbtn" onclick="filterFlotaAdmin(this,'taller')">En mantención</button>
+    </div>
+
+    <!-- Lista camionetas -->
+    <div id="flota-admin-list">
+      <div style="text-align:center;padding:40px;color:var(--text3);font-size:13px">Cargando flota...</div>
+    </div>
+
+    <button class="refresh-btn" onclick="cargarFlotaAdmin()" style="margin-top:4px">
+      <svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+      Actualizar flota
+    </button>
+  </div>
+</div>
+
+  <!-- GESTIÓN MODULE -->
+  <div id="s-gestion" style="display:none;min-height:100vh;background:var(--bg)">
+    <div style="padding:52px 20px 14px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:20px;font-weight:600;color:var(--text)">Gestión</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">Equipos · Conductores · Supervisores · Mecánicos</div>
+        </div>
+        <button onclick="document.getElementById('s-gestion').style.display='none';document.getElementById('s-main').style.display=''" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text2);padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">← Volver</button>
+      </div>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="nav-tab on" onclick="switchTab(this,'tab-flota')">🚗 Equipos</button>
+      <button class="nav-tab" onclick="switchTab(this,'tab-conductores')">👤 Conductores</button>
+      <button class="nav-tab" onclick="switchTab(this,'tab-supervisores')">🛡 Supervisores</button>
+      <button class="nav-tab" onclick="switchTab(this,'tab-mecanicos')">🔧 Mecánicos</button>
+    </div>
+
+    <!-- EQUIPOS -->
+    <div id="tab-flota" style="padding:14px">
+      <button class="refresh-btn" onclick="abrirModal('flota')" style="margin-bottom:12px;border-color:rgba(59,130,246,0.3);color:var(--blue)">
+        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        Agregar equipo
+      </button>
+      <div id="list-flota"></div>
+    </div>
+
+    <!-- CONDUCTORES -->
+    <div id="tab-conductores" style="display:none;padding:14px">
+      <button class="refresh-btn" onclick="abrirModal('conductores')" style="margin-bottom:12px;border-color:rgba(59,130,246,0.3);color:var(--blue)">
+        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        Agregar conductor
+      </button>
+      <div id="list-conductores"></div>
+    </div>
+
+    <!-- SUPERVISORES -->
+    <div id="tab-supervisores" style="display:none;padding:14px">
+      <button class="refresh-btn" onclick="abrirModal('supervisores')" style="margin-bottom:12px;border-color:rgba(59,130,246,0.3);color:var(--blue)">
+        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        Agregar supervisor
+      </button>
+      <div id="list-supervisores"></div>
+    </div>
+
+    <!-- MECÁNICOS -->
+    <div id="tab-mecanicos" style="display:none;padding:14px">
+      <button class="refresh-btn" onclick="abrirModal('mecanicos')" style="margin-bottom:12px;border-color:rgba(59,130,246,0.3);color:var(--blue)">
+        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        Agregar mecánico
+      </button>
+      <div id="list-mecanicos"></div>
+    </div>
+  </div>
+
+  <!-- MODAL FORMULARIO -->
+  <div class="modal" id="modal" style="display:none" onclick="if(event.target===this)cerrarModal()">
+    <div class="modal-inner">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="modal-title">Agregar</div>
+      <div class="modal-sub" id="modal-sub"></div>
+      <div id="modal-form"></div>
+      <button class="refresh-btn" id="modal-btn-save" onclick="guardarModal()" style="margin-top:8px;border-color:rgba(59,130,246,0.4);color:var(--blue)">
+        <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+        Guardar
+      </button>
+      <button class="refresh-btn" onclick="cerrarModal()" style="margin-top:6px">Cancelar</button>
+    </div>
+  </div>
+
+</div>
+
+<div id="_toast"></div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbyu7Vq3yUdx2K_WlDKh3l4nNWCyAzi0wWkpCD49PJKV67nwUM0GPhG5ee6EwGi3LNAJ0A/exec";
+
+function apiCall(accion, datos) {
+  datos = datos || {};
+  return new Promise(function(resolve) {
+    var cbName = 'cb' + Date.now() + Math.floor(Math.random()*99999);
+    var param = encodeURIComponent(JSON.stringify(datos));
+    var url = API_URL + '?accion=' + encodeURIComponent(accion) + '&param=' + param + '&callback=' + cbName;
+    var done = false;
+    var timer = setTimeout(function() {
+      if (done) return; done = true; limpiar();
+      resolve({ ok: false, error: 'Timeout' });
+    }, 15000);
+    window[cbName] = function(data) {
+      if (done) return; done = true; limpiar(); resolve(data);
+    };
+    function limpiar() {
+      clearTimeout(timer); delete window[cbName];
+      var s = document.getElementById(cbName);
+      if (s) s.parentNode.removeChild(s);
+    }
+    var script = document.createElement('script');
+    script.id = cbName;
+    script.onerror = function() {
+      if (done) return; done = true; limpiar();
+      resolve({ ok: false, error: 'Error de red' });
+    };
+    script.src = url;
+    document.head.appendChild(script);
+  });
+}
+
+function toast(msg) {
+  var el = document.getElementById('_toast');
+  el.textContent = msg; el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(function() { el.style.opacity = '0'; }, 2500);
+}
+
+function copiar(url, nombre) {
+  navigator.clipboard.writeText(url).then(function() {
+    toast('Link ' + nombre + ' copiado');
+  }).catch(function() {
+    toast(url);
+  });
+}
+
+function abrirApp(url) {
+  window.open(url, '_blank');
+}
+
+
+async function cargarDatos() {
+  // Fecha y hora
+  var ahora = new Date();
+  document.getElementById('header-fecha').textContent =
+    ahora.toLocaleDateString('es-CL', {weekday:'long', day:'numeric', month:'long'}) + ' · ' +
+    ahora.toLocaleTimeString('es-CL', {hour:'2-digit', minute:'2-digit'});
+
+  toast('Actualizando datos...');
+
+  try {
+    var [flota, conductores, supervisores, desvios, ots, actas] = await Promise.all([
+      apiCall('getFlota'),
+      apiCall('getConductores'),
+      apiCall('getSupervisores'),
+      apiCall('getDesvios'),
+      apiCall('getOTs'),
+      apiCall('getActas')
+    ]);
+
+    // Alertas de mantención por separado — no bloquea si falla
+    var alertas = { ok: false, data: [] };
+    try { alertas = await apiCall('getAlertas'); } catch(e) {}
+
+    // FLOTA
+    if (flota.ok) {
+      var total = flota.data.length;
+      var activas = flota.data.filter(function(v) {
+        return (v.Estado || '').toLowerCase() === 'activa' || (v.Estado || '').toLowerCase() === 'operativa';
+      }).length;
+      var enTaller = flota.data.filter(function(v) { return (v.Estado || '').toLowerCase() === 'en taller'; }).length;
+      var fueraLinea = flota.data.filter(function(v) {
+        return (v.Estado || '').toLowerCase() === 'fuera de línea' || (v.Estado || '').toLowerCase() === 'fuera de linea';
+      }).length;
+      var pendientesVal = flota.data.filter(function(v) {
+        return (v.EstadoValidacion || '').toLowerCase() === 'pendiente validación' || (v.EstadoValidacion || '').toLowerCase() === 'pendiente validacion';
+      }).length;
+      document.getElementById('m-flota').textContent = total;
+      document.getElementById('m-activas').textContent = activas + ' operativas · ' + pendientesVal + ' pendientes';
+    }
+
+    // CONDUCTORES
+    if (conductores.ok) {
+      document.getElementById('stat-conductores').textContent = conductores.data.length + ' conductores';
+    }
+
+    // SUPERVISORES
+    if (supervisores.ok) {
+      document.getElementById('stat-supervisores').textContent = supervisores.data.length + ' supervisores';
+    }
+
+    // DESVÍOS / VALIDACIONES
+    if (desvios.ok) {
+      var pendientes = desvios.data.filter(function(d) {
+        var ev = (d.EstadoValidacion || '').toLowerCase();
+        var em = (d.EstadoMecanico || '').toLowerCase();
+        return ev === 'pendiente validación' || ev === 'pendiente validacion' || em === 'pendiente';
+      });
+      var criticos = pendientes.filter(function(d) {
+        return (d.Nivel || d.nivel || '').toLowerCase() === 'critico' || (d.DecisionValidacion || '').toLowerCase() === 'fuera de línea';
+      });
+      document.getElementById('m-desvios').textContent = pendientes.length;
+      document.getElementById('m-criticos').textContent = criticos.length + ' críticos';
+      document.getElementById('chip-desvios').textContent = pendientes.length + ' pendientes';
+      document.getElementById('stat-desvios-mec').textContent = pendientes.length + ' pendientes';
+
+      // Alertas
+      var alertasList = document.getElementById('alertas-list');
+      alertasList.innerHTML = '';
+
+      pendientes.slice(0, 5).forEach(function(d) {
+        var decision = (d.DecisionValidacion || '').toLowerCase();
+        var esCritico = (d.Nivel || d.nivel || '').toLowerCase() === 'critico' || decision === 'fuera de línea' || decision === 'fuera de linea';
+        var responsable = d.ResponsableTurno || (d.Turno === 'Noche' ? 'Supervisor' : 'Mecánico') || 'Responsable';
+        var fechaLimite = d.FechaLimiteValidacion || '';
+        var badgeText = (d.EstadoValidacion || 'Pendiente validación');
+        var card = document.createElement('div');
+        card.className = 'alert-card ' + (esCritico ? 'critica' : 'media');
+        card.innerHTML =
+          '<div class="alert-dot" style="background:' + (esCritico ? 'var(--red)' : 'var(--amber)') + '"></div>' +
+          '<div class="alert-content">' +
+            '<div class="alert-title">' + (d.Patente||'—') + ' · ' + (d.Tipo || d.TipoDesvio || 'Desvío') + '</div>' +
+            '<div class="alert-desc">' + (d.Descripcion||'Sin descripción') + '</div>' +
+            '<div class="alert-time">Conductor: ' + (d.Conductor||'—') + ' · Valida: ' + responsable + (fechaLimite ? ' · límite ' + fechaLimite : '') + '</div>' +
+          '</div>' +
+          '<span class="badge ' + (esCritico ? 'badge-red' : 'badge-amber') + '">' + badgeText + '</span>';
+        alertasList.appendChild(card);
+      });
+
+      if (!pendientes.length) {
+        alertasList.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Sin pendientes de validación</div>';
+      } else if (pendientes.length > 5) {
+        alertasList.innerHTML += '<div style="text-align:center;font-size:12px;color:var(--text3);padding:8px">+ ' + (pendientes.length-5) + ' pendientes más en las apps de validación</div>';
+      }
+    }
+
+    // Alertas de mantención
+    if (alertas && alertas.ok && alertas.data && alertas.data.length > 0) {
+      var alSection = document.getElementById('alertas-list');
+      var mantencionCards = alertas.data.map(function(a) {
+        var color = a.urgencia === 'vencida' ? 'var(--red)' : a.urgencia === 'critica' ? 'var(--red)' : 'var(--amber)';
+        var msg = a.urgencia === 'vencida'
+          ? 'MANTENCIÓN VENCIDA · ' + Math.abs(a.diferencia).toLocaleString() + ' km sobre el límite'
+          : 'Mantención en ' + a.diferencia.toLocaleString() + ' km';
+        return '<div class="alert-card ' + (a.urgencia !== 'proxima' ? 'critica' : 'media') + '">' +
+          '<div class="alert-dot" style="background:'+color+'"></div>' +
+          '<div class="alert-content">' +
+            '<div class="alert-title">' + a.patente + ' · ' + a.marca + ' ' + a.modelo + '</div>' +
+            '<div class="alert-desc">' + msg + '</div>' +
+            '<div class="alert-time">Km actual: ' + a.kmActual.toLocaleString() + ' · Próximo servicio: ' + a.kmProximo.toLocaleString() + '</div>' +
+          '</div>' +
+          '<span class="badge ' + (a.urgencia !== 'proxima' ? 'badge-red' : 'badge-amber') + '">' + 
+          (a.urgencia === 'vencida' ? 'Vencida' : a.urgencia === 'critica' ? 'Crítica' : 'Próxima') + '</span>' +
+          '</div>';
+      }).join('');
+      if (alSection) alSection.innerHTML = mantencionCards + (alSection.innerHTML || '');
+    }
+
+    // OTs
+    if (ots.ok) {
+      var abiertas = ots.data.filter(function(o) { return o.Estado === 'Abierta' || o.Estado === 'En taller'; });
+      var enTallerOT = ots.data.filter(function(o) { return o.Estado === 'En taller'; });
+      document.getElementById('m-ot').textContent = abiertas.length;
+      document.getElementById('m-ot-sub').textContent = enTallerOT.length + ' en taller';
+      document.getElementById('chip-ot').textContent = abiertas.length + ' OT activas';
+      document.getElementById('stat-ot-mec').textContent = abiertas.length + ' OT abiertas';
+    }
+
+    // ACTAS
+    if (actas.ok) {
+      document.getElementById('m-actas').textContent = actas.data.length;
+      document.getElementById('m-actas-sub').textContent = 'Recep./entrega/validación';
+    }
+
+    toast('Datos actualizados');
+  } catch(e) {
+    toast('Error al cargar datos');
+    console.error(e);
+  }
+}
+
+// Cargar al iniciar
+cargarDatos();
+
+// Auto-actualizar cada 5 minutos
+setInterval(cargarDatos, 5 * 60 * 1000);
+
+// ── GESTIÓN MODULE ──────────────────────────────────────────────
+const SCHEMAS = {
+  flota: {
+    hoja: 'Flota',
+    titulo: 'Equipo',
+    busqueda: 'Patente',
+    campos: [
+      {key:'Patente', label:'Patente', type:'text', placeholder:'Ej: AB-1234', required:true},
+      {key:'Marca', label:'Marca', type:'text', placeholder:'Ej: Toyota'},
+      {key:'Modelo', label:'Modelo', type:'text', placeholder:'Ej: Hilux'},
+      {key:'Año', label:'Año', type:'number', placeholder:'Ej: 2022'},
+      {key:'Color', label:'Color', type:'text', placeholder:'Ej: Blanco'},
+      {key:'Departamento', label:'Departamento', type:'select', options:['Operaciones','Expeditoría','Prevención','Administración']},
+      {key:'Estado', label:'Estado', type:'select', options:['Activa','En taller','Bloqueada','Baja']},
+      {key:'KmActual', label:'Km actuales', type:'number', placeholder:'Ej: 54210'},
+      {key:'KmProximaMantencion', label:'Km próxima mantención', type:'number', placeholder:'Ej: 140000'},
+      {key:'KmAlertaMantencion', label:'Alertar cuando falten (km)', type:'number', placeholder:'Ej: 500'},
+    ]
+  },
+  conductores: {
+    hoja: 'Conductores',
+    titulo: 'Conductor',
+    busqueda: 'Nombre',
+    campos: [
+      {key:'Nombre', label:'Nombre completo', type:'text', placeholder:'Ej: Carlos Pérez', required:true},
+      {key:'RUT', label:'RUT', type:'text', placeholder:'Ej: 12.345.678-9'},
+      {key:'Telefono', label:'Teléfono', type:'tel', placeholder:'Ej: 912345678'},
+      {key:'Departamento', label:'Departamento', type:'select', options:['Operaciones','Expeditoría','Prevención','Administración']},
+      {key:'Turno', label:'Turno habitual', type:'select', options:['Rotativo','Día fijo','Noche fija']},
+      {key:'Estado', label:'Estado', type:'select', options:['Activo','Inactivo','Vacaciones','Licencia']},
+    ]
+  },
+  supervisores: {
+    hoja: 'Supervisores',
+    titulo: 'Supervisor',
+    busqueda: 'Nombre',
+    campos: [
+      {key:'Nombre', label:'Nombre completo', type:'text', placeholder:'Ej: Marco Díaz', required:true},
+      {key:'RUT', label:'RUT', type:'text', placeholder:'Ej: 15.111.222-3'},
+      {key:'Telefono', label:'Teléfono', type:'tel', placeholder:'Ej: 911112222'},
+      {key:'TurnoHabitual', label:'Turno', type:'select', options:['Noche','Día','Ambos']},
+      {key:'Estado', label:'Estado', type:'select', options:['Activo','Inactivo']},
+    ]
+  },
+  mecanicos: {
+    hoja: 'Mecanicos',
+    titulo: 'Mecánico',
+    busqueda: 'Nombre',
+    campos: [
+      {key:'Nombre', label:'Nombre completo', type:'text', placeholder:'Ej: Roberto Campos', required:true},
+      {key:'RUT', label:'RUT', type:'text', placeholder:'Ej: 16.777.888-9'},
+      {key:'Telefono', label:'Teléfono', type:'tel', placeholder:'Ej: 977778888'},
+      {key:'Estado', label:'Estado', type:'select', options:['Activo','Inactivo']},
+    ]
+  }
+};
+
+let currentTab = 'flota';
+let modalMode = 'add'; // 'add' or 'edit'
+let editingValue = null;
+let cachedData = {};
+
+async function abrirGestion() {
+  document.getElementById('s-main').style.display = 'none';
+  document.getElementById('s-gestion').style.display = '';
+  await cargarTab('flota');
+}
+
+function switchTab(btn, tabId) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('on'));
+  btn.classList.add('on');
+  ['tab-flota','tab-conductores','tab-supervisores','tab-mecanicos'].forEach(t => {
+    document.getElementById(t).style.display = t === tabId ? '' : 'none';
+  });
+  currentTab = tabId.replace('tab-','');
+  cargarTab(currentTab);
+}
+
+async function cargarTab(tipo) {
+  const schema = SCHEMAS[tipo];
+  if (!schema) return;
+  const listEl = document.getElementById('list-' + tipo);
+  listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Cargando...</div>';
+  const res = await apiCall('get' + schema.hoja);
+  if (!res.ok) { listEl.innerHTML = '<div style="color:var(--red);padding:14px">Error al cargar</div>'; return; }
+  cachedData[tipo] = res.data;
+  renderList(tipo, res.data);
+}
+
+function renderList(tipo, data) {
+  const schema = SCHEMAS[tipo];
+  const listEl = document.getElementById('list-' + tipo);
+  listEl.innerHTML = '';
+  if (!data || !data.length) {
+    listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px">No hay registros. Agrega el primero.</div>';
+    return;
+  }
+  data.forEach(function(item) {
+    const inactivo = item.Estado === 'Inactivo' || item.Estado === 'Baja';
+    const card = document.createElement('div');
+    card.className = 'reg-card' + (inactivo ? ' inactivo' : '');
+    const keyVal = item[schema.busqueda] || '—';
+    // Build detail line
+    let details = [];
+    if (item.RUT) details.push(item.RUT);
+    if (item.Telefono) details.push(item.Telefono);
+    if (item.Departamento) details.push(item.Departamento);
+    if (item.Turno || item.TurnoHabitual) details.push(item.Turno || item.TurnoHabitual);
+    if (item.Marca) details.push(item.Marca + ' ' + (item.Modelo||'') + ' ' + (item.Año||''));
+    if (item.KmActual) details.push(item.KmActual + ' km');
+    const estadoColor = item.Estado === 'Activo' || item.Estado === 'Activa' ? 'var(--green)' :
+                        item.Estado === 'Inactivo' || item.Estado === 'Baja' ? 'var(--red)' : 'var(--amber)';
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="reg-name">${keyVal}</div>
+          <div class="reg-detail">${details.join(' · ')}</div>
+        </div>
+        <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--bg3);color:${estadoColor}">${item.Estado||'—'}</span>
+      </div>
+      <div class="reg-actions">
+        <button class="reg-btn edit" onclick="abrirEditar('${tipo}','${keyVal.replace(/'/g,"\'")}')">✏ Editar</button>
+        ${!inactivo
+          ? `<button class="reg-btn deact" onclick="confirmarDesactivar('${tipo}','${keyVal.replace(/'/g,"\'")}')">✕ Desactivar</button>`
+          : `<button class="reg-btn activ" onclick="reactivar('${tipo}','${keyVal.replace(/'/g,"\'")}')">✓ Reactivar</button>`
+        }
+      </div>`;
+    listEl.appendChild(card);
+  });
+}
+
+function abrirModal(tipo, modo, valorBusqueda) {
+  modalMode = modo || 'add';
+  editingValue = valorBusqueda || null;
+  const schema = SCHEMAS[tipo];
+  currentTab = tipo;
+  document.getElementById('modal-title').textContent = (modalMode === 'add' ? 'Agregar ' : 'Editar ') + schema.titulo;
+  document.getElementById('modal-sub').textContent = modalMode === 'add' ? 'Completa los datos' : 'Modifica los campos necesarios';
+
+  // Build form
+  const form = document.getElementById('modal-form');
+  form.innerHTML = '';
+  schema.campos.forEach(function(campo) {
+    const fgrp = document.createElement('div');
+    fgrp.className = 'fgrp';
+    let input;
+    if (campo.type === 'select') {
+      input = document.createElement('select');
+      input.className = 'sel';
+      campo.options.forEach(function(opt) {
+        const o = document.createElement('option');
+        o.value = opt; o.textContent = opt;
+        input.appendChild(o);
+      });
+    } else {
+      input = document.createElement('input');
+      input.className = 'inp';
+      input.type = campo.type || 'text';
+      input.placeholder = campo.placeholder || '';
+    }
+    input.id = 'field-' + campo.key;
+    // Pre-fill if editing
+    if (modalMode === 'edit' && cachedData[tipo]) {
+      const reg = cachedData[tipo].find(function(r) { return r[schema.busqueda] === valorBusqueda; });
+      if (reg && reg[campo.key] !== undefined) input.value = reg[campo.key];
+    }
+    const lbl = document.createElement('label');
+    lbl.className = 'flbl';
+    lbl.textContent = campo.label + (campo.required ? ' *' : '');
+    fgrp.appendChild(lbl);
+    fgrp.appendChild(input);
+    form.appendChild(fgrp);
+  });
+
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function abrirEditar(tipo, valor) {
+  abrirModal(tipo, 'edit', valor);
+}
+
+function cerrarModal() {
+  document.getElementById('modal').style.display = 'none';
+}
+
+async function guardarModal() {
+  const schema = SCHEMAS[currentTab];
+  const campos = {};
+  let valid = true;
+  schema.campos.forEach(function(campo) {
+    const el = document.getElementById('field-' + campo.key);
+    if (el) {
+      campos[campo.key] = el.value;
+      if (campo.required && !el.value) valid = false;
+    }
+  });
+  if (!valid) { toast('Completa los campos obligatorios (*)'); return; }
+
+  cerrarModal();
+  toast('Guardando...');
+
+  let res;
+  if (modalMode === 'add') {
+    res = await apiCall('agregarRegistro', { hoja: schema.hoja, campos: campos });
+  } else {
+    res = await apiCall('editarRegistro', {
+      hoja: schema.hoja,
+      campoBusqueda: schema.busqueda,
+      valorBusqueda: editingValue,
+      campos: campos
+    });
+  }
+
+  if (res.ok) {
+    toast('✓ ' + (modalMode === 'add' ? 'Registro agregado' : 'Registro actualizado'));
+    await cargarTab(currentTab);
+  } else {
+    toast('Error: ' + (res.error || ''));
+  }
+}
+
+async function confirmarDesactivar(tipo, valor) {
+  if (!confirm('¿Desactivar ' + valor + '? Quedará inactivo pero no se eliminará.')) return;
+  const schema = SCHEMAS[tipo];
+  toast('Desactivando...');
+  const res = await apiCall('desactivarRegistro', {
+    hoja: schema.hoja,
+    campoBusqueda: schema.busqueda,
+    valorBusqueda: valor
+  });
+  if (res.ok) {
+    toast('✓ ' + valor + ' desactivado');
+    await cargarTab(tipo);
+  } else {
+    toast('Error: ' + (res.error || ''));
+  }
+}
+
+async function reactivar(tipo, valor) {
+  const schema = SCHEMAS[tipo];
+  toast('Reactivando...');
+  const res = await apiCall('editarRegistro', {
+    hoja: schema.hoja,
+    campoBusqueda: schema.busqueda,
+    valorBusqueda: valor,
+    campos: { Estado: 'Activo' }
+  });
+  if (res.ok) {
+    toast('✓ ' + valor + ' reactivado');
+    await cargarTab(tipo);
+  } else {
+    toast('Error: ' + (res.error || ''));
+  }
+}
+
+
+// ── ESTADO DE FLOTA ─────────────────────────────────────────────
+var _flotaAdminData = [];
+
+async function abrirFlota() {
+  document.getElementById('s-main').style.display = 'none';
+  document.getElementById('s-flota').style.display = '';
+  document.getElementById('flota-fecha').textContent = new Date().toLocaleDateString('es-CL', {weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
+  await cargarFlotaAdmin();
+}
+
+
+async function cargarFlotaAdmin() {
+  const list = document.getElementById('flota-admin-list');
+  list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px">Cargando...</div>';
+
+  const [flotaRes, otsRes] = await Promise.all([
+    apiCall('getFlota'),
+    apiCall('getOTs')
+  ]);
+
+  if (!flotaRes.ok) { list.innerHTML = '<div style="color:var(--red);padding:14px">Error al cargar</div>'; return; }
+
+  _flotaAdminData = flotaRes.data.map(function(v) {
+    var estado = (v.Estado || 'Activa').toLowerCase();
+    var estadoValidacion = (v.EstadoValidacion || '').toLowerCase();
+    var tieneOT = v.OT_Activa && v.OT_Activa !== '';
+    var otActiva = otsRes.ok ? otsRes.data.find(function(o) { return o.NumeroOT === v.OT_Activa; }) : null;
+    var tipoMantencion = otActiva ? otActiva.Taller : null;
+
+    var estadoFinal;
+    if (estado === 'fuera de línea' || estado === 'fuera de linea') estadoFinal = 'fuera-linea';
+    else if (estadoValidacion === 'pendiente validación' || estadoValidacion === 'pendiente validacion') estadoFinal = 'pendiente-validacion';
+    else if (estado === 'bloqueada') estadoFinal = 'bloqueada';
+    else if (estado === 'en taller' || (tieneOT && otActiva)) {
+      estadoFinal = tipoMantencion && tipoMantencion.toLowerCase().includes('propio') ? 'taller-int' : 'taller-ext';
+    }
+    else if (v.ConductorActual) estadoFinal = 'asignada';
+    else estadoFinal = 'libre';
+
+    return {
+      patente: v.Patente || '—',
+      marca: v.Marca || '',
+      modelo: v.Modelo || '',
+      anio: v.Año || '',
+      color: v.Color || '',
+      dept: v.Departamento || '—',
+      estado: estadoFinal,
+      estadoValidacion: v.EstadoValidacion || '',
+      responsableValidacion: v.ResponsableValidacion || '',
+      nombreValidador: v.NombreValidador || '',
+      fechaLimiteValidacion: v.FechaLimiteValidacion || '',
+      conductor: v.ConductorActual || null,
+      turno: v.TurnoActual || null,
+      km: v.KmActual || '—',
+      comb: v.Combustible || '—',
+      ot: v.OT_Activa || null,
+      tipoMantencion: tipoMantencion
+    };
+  });
+
+  var total = _flotaAdminData.length;
+  var operativas = _flotaAdminData.filter(function(v) { return v.estado === 'asignada' || v.estado === 'libre'; }).length;
+  var asignadas = _flotaAdminData.filter(function(v) { return v.estado === 'asignada'; }).length;
+  var libres = _flotaAdminData.filter(function(v) { return v.estado === 'libre'; }).length;
+  var pendientes = _flotaAdminData.filter(function(v) { return v.estado === 'pendiente-validacion'; }).length;
+  var fuera = _flotaAdminData.filter(function(v) { return v.estado === 'fuera-linea' || v.estado === 'bloqueada'; }).length;
+  var tallerExt = _flotaAdminData.filter(function(v) { return v.estado === 'taller-ext'; }).length;
+  var tallerInt = _flotaAdminData.filter(function(v) { return v.estado === 'taller-int'; }).length;
+
+  var safe = function(id, val) { var el = document.getElementById(id); if(el) el.textContent = val; };
+  safe('fs-total', total);
+  safe('fs-operativas', operativas);
+  safe('fs-asignadas', asignadas);
+  safe('fs-libres', libres);
+  safe('fs-pend', pendientes);
+  safe('fs-fuera', fuera);
+  safe('fs-taller-ext', tallerExt);
+  safe('fs-taller-int', tallerInt);
+
+  renderFlotaAdmin(_flotaAdminData);
+}
+
+function renderFlotaAdmin(data) {
+  const list = document.getElementById('flota-admin-list');
+  list.innerHTML = '';
+
+  if (!data.length) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px">Sin camionetas en esta categoría</div>';
+    return;
+  }
+
+  data.forEach(function(v) {
+    var card = document.createElement('div');
+    card.style.cssText = 'background:var(--bg2);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;border:1px solid ';
+
+    var estadoConfig = {
+      'asignada':   { color:'rgba(34,197,94,0.35)',  badge:'badge-green', label:'Asignada' },
+      'libre':      { color:'rgba(255,255,255,0.07)', badge:'badge-gray',  label:'Disponible' },
+      'taller-ext': { color:'rgba(59,130,246,0.35)',  badge:'badge-blue',  label:'Mantención externa' },
+      'taller-int': { color:'rgba(16,185,129,0.35)',  badge:'badge-green', label:'Mantención interna' },
+      'bloqueada':  { color:'rgba(239,68,68,0.4)',    badge:'badge-red',   label:'Bloqueada' },
+      'fuera-linea':{ color:'rgba(239,68,68,0.4)',    badge:'badge-red',   label:'Fuera de línea' },
+      'pendiente-validacion': { color:'rgba(139,92,246,0.4)', badge:'badge-purple', label:'Pend. validación' }
+    };
+    var cfg = estadoConfig[v.estado] || { color:'var(--border)', badge:'badge-gray', label:v.estado };
+    card.style.cssText += cfg.color;
+
+    var dclass = v.dept.toLowerCase().indexOf('exp') !== -1 ? 'dept-exp' :
+                 v.dept.toLowerCase().indexOf('prev') !== -1 ? 'dept-prev' :
+                 v.dept.toLowerCase().indexOf('adm') !== -1 ? 'dept-adm' : 'dept-op';
+
+    var conductorRow = v.conductor
+      ? '<div style="font-size:12px;color:' + (v.estado === 'pendiente-validacion' ? 'var(--sup)' : 'var(--green)') + ';margin-top:4px;font-weight:500">✓ ' + v.conductor + (v.turno ? ' · Turno ' + v.turno : '') + '</div>'
+      : (v.estado === 'asignada' || v.estado === 'pendiente-validacion') ? '' : '<div style="font-size:12px;color:var(--text3);margin-top:4px">Sin conductor asignado</div>';
+
+    var validacionRow = v.estado === 'pendiente-validacion'
+      ? '<div style="font-size:11px;color:var(--sup);margin-top:4px">Pendiente de ' + (v.responsableValidacion || 'validación') + (v.fechaLimiteValidacion ? ' · límite ' + v.fechaLimiteValidacion : '') + '</div>'
+      : v.nombreValidador && v.estadoValidacion
+      ? '<div style="font-size:11px;color:var(--text2);margin-top:4px">' + v.estadoValidacion + ' · ' + v.nombreValidador + '</div>'
+      : '';
+
+    var otRow = v.ot
+      ? '<div style="font-size:11px;color:var(--amber);margin-top:4px;font-family:DM Mono,monospace">' + v.ot + (v.tipoMantencion ? ' · ' + v.tipoMantencion : '') + '</div>'
+      : '';
+
+    card.innerHTML = 
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+        '<div>' +
+          '<div style="font-family:DM Mono,monospace;font-size:17px;font-weight:500;letter-spacing:1.5px">' + v.patente + '</div>' +
+          '<div style="font-size:11px;color:var(--text2);margin-top:1px">' + v.marca + ' ' + v.modelo + ' ' + v.anio + ' · ' + v.color + '</div>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">' +
+          '<span class="badge ' + cfg.badge + '">' + cfg.label + '</span>' +
+          '<span class="dept-pill ' + dclass + '">' + v.dept + '</span>' +
+        '</div>' +
+      '</div>' +
+      conductorRow +
+      validacionRow +
+      otRow +
+      '<div style="display:flex;gap:14px;padding:8px 0;border-top:1px solid var(--border);margin-top:8px">' +
+        '<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Km</div><div style="font-size:13px;font-weight:500">' + v.km + '</div></div>' +
+        '<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Combustible</div><div style="font-size:13px;font-weight:500">' + v.comb + '</div></div>' +
+      '</div>';
+
+    list.appendChild(card);
+  });
+}
+
+function filterFlotaAdmin(btn, f) {
+  document.querySelectorAll('#s-flota .fbtn').forEach(function(b) { b.classList.remove('on'); });
+  btn.classList.add('on');
+  var filtered = f === 'todas' ? _flotaAdminData :
+    f === 'operativa' ? _flotaAdminData.filter(function(v) { return v.estado === 'asignada' || v.estado === 'libre'; }) :
+    f === 'taller' ? _flotaAdminData.filter(function(v) { return v.estado === 'taller-ext' || v.estado === 'taller-int'; }) :
+    _flotaAdminData.filter(function(v) { return v.estado === f; });
+  renderFlotaAdmin(filtered);
+}
+
+</script>
+</body>
+</html>
