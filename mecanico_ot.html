@@ -1259,7 +1259,7 @@ async function cargarDatosReales() {
   if (fuentePendientes.length > 0) {
     fuentePendientes.map(function(d, idx) { return {
       id: idx + 100,
-      desvioId: d.IdDesvio || d.id || ('DES-' + (idx+1)),
+      desvioId: d.IdDesvio || d.id || '',
       plate: d.Patente || '',
       model: d.Departamento || '',
       dept: d.Departamento || 'Operaciones',
