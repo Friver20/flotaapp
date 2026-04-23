@@ -706,6 +706,7 @@ let rDesvios = 0, eDesvios = 0;
 let rDocsDone = new Set(), rInvDone = new Set(), rSegDone = new Set(), eSegDone = new Set(), eEstadoDone = new Set();
 let rPhotos = new Set(), ePhotos = new Set();
 let recepcionCompleta = false;
+let validacionAprobada = false;
 let validacionPendiente = false;
 let validacionResponsable = '';
 let validacionLimite = '';
@@ -782,9 +783,27 @@ function login() {
   }
   buildPhotos('r-photos', R_PHOTOS, 'r', 'r-photo-cnt', R_PHOTOS.length);
   buildPhotos('e-photos', E_PHOTOS, 'e', 'e-photo-cnt', E_PHOTOS.length);
-  validacionPendiente = (String(d.estadoValidacion || '').trim() === 'Pendiente validación');
+  var estadoValid = String(d.estadoValidacion || '').trim();
+  validacionPendiente = (estadoValid === 'Pendiente validación');
+  validacionAprobada = (estadoValid === 'Aprobado para operar');
   validacionResponsable = d.responsableValidacion || '';
   validacionLimite = d.fechaLimiteValidacion || '';
+
+  if (validacionAprobada) {
+    recepcionCompleta = true;
+    var kmBase = data.km || '—';
+    var combBase = data.comb || '—';
+    safe('e-home-km-inicio', function(el) { el.textContent = kmBase; });
+    safe('e-home-comb-inicio', function(el) { el.textContent = combBase; });
+    safe('tab-recep-badge', function(el) { el.style.display = ''; });
+    safe('tab-entrega-badge', function(el) { el.style.display = ''; });
+    safe('tl1', function(el) { el.className = 'tl-circle done'; el.textContent = '✓'; });
+    safe('tl1-lbl', function(el) { el.className = 'tl-label done'; });
+    safe('tl2', function(el) { el.className = 'tl-circle active-r'; el.textContent = '2'; });
+    safe('tl2-lbl', function(el) { el.className = 'tl-label active-r'; });
+    safe('tl-line1', function(el) { el.classList.add('done'); });
+  }
+
   renderEstadoValidacionHome();
 }
 
@@ -850,8 +869,20 @@ function renderEstadoValidacionHome() {
     return;
   }
 
+  if (validacionAprobada || recepcionCompleta) {
+    fallasHome.innerHTML = '<div class="diff-ok">Recepción vigente. La validación del responsable quedó incorporada y puedes continuar tu turno sin repetir el checklist.</div>';
+    timelineMsg.textContent = validacionAprobada
+      ? 'Vehículo validado para operar. La recepción ya registrada sigue vigente.'
+      : 'Recepción completada. Completa la entrega al terminar tu turno.';
+    btnRecep.textContent = validacionAprobada ? 'Recepción validada' : 'Recepción ya registrada';
+    btnRecep.disabled = true;
+    btnRecep.style.opacity = '0.55';
+    btnRecep.style.cursor = 'not-allowed';
+    return;
+  }
+
   fallasHome.innerHTML = '<div class="empty">Sin fallas activas registradas</div>';
-  if (!recepcionCompleta) timelineMsg.textContent = 'Completa el checklist de recepción para iniciar tu turno.';
+  timelineMsg.textContent = 'Completa el checklist de recepción para iniciar tu turno.';
   btnRecep.textContent = 'Iniciar checklist de recepción';
   btnRecep.disabled = false;
   btnRecep.style.opacity = '1';
@@ -1160,10 +1191,12 @@ async function cerrarRecepcion() {
       fotoURL: ''
     });
     validacionPendiente = !!(validacionRes && validacionRes.ok);
+    validacionAprobada = false;
     validacionResponsable = validacionRes && validacionRes.responsable ? validacionRes.responsable : ((String((data.turno || 'Dia')).toLowerCase().indexOf('noche') !== -1) ? 'Supervisor' : 'Mecánico');
     validacionLimite = validacionRes && validacionRes.fechaLimiteValidacion ? validacionRes.fechaLimiteValidacion : '';
   } else {
     validacionPendiente = false;
+    validacionAprobada = false;
     validacionResponsable = '';
     validacionLimite = '';
   }
