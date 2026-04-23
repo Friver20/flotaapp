@@ -386,8 +386,8 @@
         <div class="card" style="margin-top:4px">
           <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px">Resumen recepción</div>
           <div style="font-size:12px;color:var(--text2);line-height:1.8">
-            Camioneta: <span style="color:var(--text)">CD-3301</span><br>
-            Km recibidos: <span style="color:var(--text)">54.210</span> · Combustible: <span style="color:var(--text)">3/4</span><br>
+            Camioneta: <span id="r-res-plate" style="color:var(--text)">—</span><br>
+            Km recibidos: <span id="r-res-km" style="color:var(--text)">—</span> · Combustible: <span id="r-res-comb" style="color:var(--text)">—</span><br>
             Documentos: <span id="r-res-docs" style="color:var(--text)">7/7</span> · Inventario: <span id="r-res-inv" style="color:var(--text)">0/10</span><br>
             Fotos: <span id="r-res-fotos" style="color:var(--text)">0</span> adjuntas · Desvíos: <span id="r-res-desvios" style="color:var(--text)">0</span>
           </div>
@@ -407,8 +407,8 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <div>
               <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Al recibir</div>
-              <div style="font-size:13px;color:var(--text2)">Km: <b style="color:var(--text)">54.210</b></div>
-              <div style="font-size:13px;color:var(--text2)">Comb: <b style="color:var(--text)">3/4</b></div>
+              <div style="font-size:13px;color:var(--text2)">Km: <b id="e-home-km-inicio" style="color:var(--text)">—</b></div>
+              <div style="font-size:13px;color:var(--text2)">Comb: <b id="e-home-comb-inicio" style="color:var(--text)">—</b></div>
             </div>
             <div>
               <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Ahora</div>
@@ -1118,6 +1118,8 @@ async function cerrarRecepcion() {
   safe('exito-r-km', function(el) { el.textContent = kmVal || '—'; });
   safe('exito-r-comb', function(el) { el.textContent = combVal || '—'; });
   safe('exito-r-desvios', function(el) { el.textContent = rDesvios; el.style.color = rDesvios > 0 ? 'var(--danger)' : 'var(--ok)'; });
+  safe('e-home-km-inicio', function(el) { el.textContent = kmVal || '—'; });
+  safe('e-home-comb-inicio', function(el) { el.textContent = combVal || '—'; });
   safe('exito-r-alerta', function(el) { el.style.display = rDesvios > 0 ? '' : 'none'; });
   safe('tab-recep-badge', function(el) { el.style.display = ''; });
   safe('tab-entrega-badge', function(el) { el.style.display = ''; });
