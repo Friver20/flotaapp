@@ -807,6 +807,7 @@ function login() {
 
   renderEstadoValidacionHome();
   if (validacionAprobada || recepcionCompleta) { showTabs(true); }
+  if (validacionAprobada) { setTimeout(function(){ abrirEntregaValidada(); }, 150); }
 }
 
 // ── TABS ────────────────────────────────────────────────────────────
@@ -1578,10 +1579,7 @@ function iniciarChecklist() {
     return false;
   }
   if (validacionAprobada || recepcionCompleta) {
-    showTabs(true);
-    showAlerta('Recepción ya registrada', 'La recepción original sigue vigente y el vehículo ya fue validado para operar. No debes repetir el checklist; continúa el turno y completa la entrega al finalizar.', '✅', function(){
-      abrirEntregaValidada();
-    });
+    abrirEntregaValidada();
     return false;
   }
   if (!camData.plate || camData.plate === '—') {
@@ -1603,9 +1601,14 @@ function abrirEntregaValidada() {
   var d = CONDUCTORES[conductor] || {};
   safe('e-home-km-inicio', function(el) { el.textContent = d.kmRecepcion || d.km || '—'; });
   safe('e-home-comb-inicio', function(el) { el.textContent = d.combRecepcion || d.comb || '—'; });
+  var modal = document.getElementById('modal-alerta');
+  if (modal) modal.style.display = 'none';
   showTabs(true);
-  setTab('entrega');
-  setTimeout(function(){ goS('e-home'); }, 50);
+  var tr = document.getElementById('tab-recep');
+  var te = document.getElementById('tab-entrega');
+  if (tr) tr.className = 'mode-tab';
+  if (te) te.className = 'mode-tab active-entrega';
+  goS('e-home');
 }
 
 function showAlerta(titulo, mensaje, icono, onClose) {
