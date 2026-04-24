@@ -874,12 +874,13 @@ function renderEstadoValidacionHome() {
   if (validacionAprobada || recepcionCompleta) {
     fallasHome.innerHTML = '<div class="diff-ok">Recepción vigente. La validación del responsable quedó incorporada y puedes continuar tu turno sin repetir el checklist.</div>';
     timelineMsg.textContent = validacionAprobada
-      ? 'Vehículo validado para operar. La recepción ya registrada sigue vigente.'
+      ? 'Vehículo validado para operar. La recepción ya registrada sigue vigente. Continúa con la entrega al finalizar el turno.'
       : 'Recepción completada. Completa la entrega al terminar tu turno.';
-    btnRecep.textContent = validacionAprobada ? 'Recepción validada' : 'Recepción ya registrada';
-    btnRecep.disabled = true;
-    btnRecep.style.opacity = '0.55';
-    btnRecep.style.cursor = 'not-allowed';
+    btnRecep.textContent = validacionAprobada ? 'Ir a checklist de entrega' : 'Ver estado de entrega';
+    btnRecep.disabled = false;
+    btnRecep.style.opacity = '1';
+    btnRecep.style.cursor = 'pointer';
+    btnRecep.onclick = function(){ abrirEntregaValidada(); };
     return;
   }
 
@@ -889,6 +890,7 @@ function renderEstadoValidacionHome() {
   btnRecep.disabled = false;
   btnRecep.style.opacity = '1';
   btnRecep.style.cursor = 'pointer';
+  btnRecep.onclick = function(){ iniciarChecklist(); };
 }
 
 // ── CHECKLIST DOCS ──────────────────────────────────────────────────
@@ -1578,10 +1580,7 @@ function iniciarChecklist() {
   if (validacionAprobada || recepcionCompleta) {
     showTabs(true);
     showAlerta('Recepción ya registrada', 'La recepción original sigue vigente y el vehículo ya fue validado para operar. No debes repetir el checklist; continúa el turno y completa la entrega al finalizar.', '✅', function(){
-      var d = CONDUCTORES[conductor] || {};
-      safe('e-home-km-inicio', function(el) { el.textContent = d.kmRecepcion || d.km || '—'; });
-      safe('e-home-comb-inicio', function(el) { el.textContent = d.combRecepcion || d.comb || '—'; });
-      setTab('entrega');
+      abrirEntregaValidada();
     });
     return false;
   }
@@ -1598,6 +1597,16 @@ function iniciarChecklist() {
   return false;
 }
 
+
+
+function abrirEntregaValidada() {
+  var d = CONDUCTORES[conductor] || {};
+  safe('e-home-km-inicio', function(el) { el.textContent = d.kmRecepcion || d.km || '—'; });
+  safe('e-home-comb-inicio', function(el) { el.textContent = d.combRecepcion || d.comb || '—'; });
+  showTabs(true);
+  setTab('entrega');
+  setTimeout(function(){ goS('e-home'); }, 50);
+}
 
 function showAlerta(titulo, mensaje, icono, onClose) {
   document.getElementById('modal-alerta-icon').textContent = icono || '⚠️';
@@ -1617,7 +1626,7 @@ function showAlerta(titulo, mensaje, icono, onClose) {
 </script>
 
 <div id="modal-alerta" style="display:none" class="modal-alerta" onclick="this.style.display='none'">
-  <div class="modal-alerta-inner">
+  <div class="modal-alerta-inner" onclick="event.stopPropagation()">
     <div class="modal-alerta-icon" id="modal-alerta-icon">⚠️</div>
     <div class="modal-alerta-title" id="modal-alerta-title">Sin camioneta asignada</div>
     <div class="modal-alerta-msg" id="modal-alerta-msg"></div>
