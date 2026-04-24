@@ -1880,6 +1880,75 @@ window.addEventListener('load', function(){ setTimeout(function(){ try { if (con
 })();
 
 
+
+/* =========================================================
+   FIX UX FINAL: NO PERMITIR VOLVER A RECEPCIÓN SI YA ESTÁ VIGENTE
+   ========================================================= */
+(function(){
+  function norm(v){ return String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+  function getD(){ try { return (CONDUCTORES && conductor) ? (CONDUCTORES[conductor] || {}) : {}; } catch(e){ return {}; } }
+  function recepKey(){ var d=getD(); return 'flotaapp_recepcion_' + String(conductor||'').trim() + '|' + String(d.plate||'').trim(); }
+  function getLocalRecep(){ try { var raw=localStorage.getItem(recepKey()); return raw ? JSON.parse(raw) : null; } catch(e){ return null; } }
+  function recepcionVigente(){
+    var d=getD();
+    var estado=norm(d.estadoValidacion || '');
+    return !!(validacionAprobada || recepcionCompleta || estado.indexOf('aprobado')!==-1 || estado.indexOf('validado')!==-1 || d.kmRecepcion || d.combRecepcion || getLocalRecep());
+  }
+  function kmInicio(){ var d=getD(), l=getLocalRecep()||{}; return d.kmRecepcion || l.kmInicio || d.km || '—'; }
+  function combInicio(){ var d=getD(), l=getLocalRecep()||{}; return d.combRecepcion || l.combustibleInicio || d.comb || '—'; }
+  function setText(id, txt){ var el=document.getElementById(id); if(el) el.textContent=txt; }
+  function marcarRecepcionComoCerrada(){
+    var tr=document.getElementById('tab-recep');
+    var te=document.getElementById('tab-entrega');
+    if(tr){ tr.className='mode-tab'; tr.style.opacity='0.65'; tr.title='Recepción ya registrada y validada'; }
+    if(te){ te.className='mode-tab active-entrega'; te.style.opacity='1'; }
+    var badge=document.getElementById('tab-recep-badge'); if(badge){ badge.style.display=''; badge.textContent='✓'; }
+    setText('e-home-km-inicio', kmInicio());
+    setText('e-home-comb-inicio', combInicio());
+  }
+  function irEntregaHome(){
+    recepcionCompleta=true; validacionPendiente=false;
+    try { showTabs(true); } catch(e){}
+    marcarRecepcionComoCerrada();
+    if (typeof goS === 'function') goS('e-home');
+  }
+  var oldSetTab = window.setTab;
+  window.setTab = function(tab){
+    if(tab === 'recep' && recepcionVigente() && !validacionPendiente){
+      try { showAlerta('Recepción ya registrada', 'La recepción ya fue registrada y validada. No debes repetirla. Continúa con el checklist de entrega al finalizar tu turno.', '✅', function(){ irEntregaHome(); }); } catch(e) {}
+      irEntregaHome();
+      return false;
+    }
+    if(tab === 'entrega'){
+      if(validacionPendiente){ try { showAlerta('Vehículo pendiente de validación', 'No se puede completar la entrega hasta que el responsable valide la camioneta.', '⏳'); } catch(e){} if (typeof goS === 'function') goS('s-home'); return false; }
+      irEntregaHome();
+      return false;
+    }
+    return typeof oldSetTab === 'function' ? oldSetTab(tab) : false;
+  };
+  var oldIniciarChecklist = window.iniciarChecklist;
+  window.iniciarChecklist = function(ev){
+    if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+    if(recepcionVigente() && !validacionPendiente){ irEntregaHome(); return false; }
+    return typeof oldIniciarChecklist === 'function' ? oldIniciarChecklist(ev) : false;
+  };
+  var oldAbrirEntrega = window.abrirEntregaValidada;
+  window.abrirEntregaValidada = function(ev){
+    if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+    if (typeof oldAbrirEntrega === 'function') oldAbrirEntrega(ev);
+    marcarRecepcionComoCerrada();
+    if (typeof goS === 'function') goS('e-home');
+    return false;
+  };
+  function bind(){
+    var tr=document.getElementById('tab-recep'); if(tr) tr.onclick=function(ev){ if(ev){ev.preventDefault(); ev.stopPropagation();} return window.setTab('recep'); };
+    var te=document.getElementById('tab-entrega'); if(te) te.onclick=function(ev){ if(ev){ev.preventDefault(); ev.stopPropagation();} return window.setTab('entrega'); };
+    var b=document.getElementById('btn-iniciar-recep'); if(b && recepcionVigente() && !validacionPendiente){ b.onclick=function(ev){ if(ev){ev.preventDefault(); ev.stopPropagation();} irEntregaHome(); return false; }; }
+    if(recepcionVigente() && !validacionPendiente) marcarRecepcionComoCerrada();
+  }
+  window.addEventListener('load', function(){ setTimeout(bind, 600); setTimeout(bind, 1500); });
+  document.addEventListener('DOMContentLoaded', function(){ setTimeout(bind, 600); });
+})();
 </script>
 
 <div id="modal-alerta" style="display:none" class="modal-alerta" onclick="this.style.display='none'">
