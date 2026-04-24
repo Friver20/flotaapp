@@ -1556,8 +1556,10 @@ function iniciarChecklist() {
     return false;
   }
   if (validacionAprobada || recepcionCompleta) {
-    showAlerta('Recepción ya registrada', 'La recepción original sigue vigente y el vehículo ya fue validado para operar. No debes repetir el checklist; continúa el turno y completa la entrega al finalizar.', '✅');
-    goS('s-home');
+    showTabs(true);
+    showAlerta('Recepción ya registrada', 'La recepción original sigue vigente y el vehículo ya fue validado para operar. No debes repetir el checklist; continúa el turno y completa la entrega al finalizar.', '✅', function(){
+      setTab('entrega');
+    });
     return false;
   }
   if (!camData.plate || camData.plate === '—') {
@@ -1574,10 +1576,18 @@ function iniciarChecklist() {
 }
 
 
-function showAlerta(titulo, mensaje, icono) {
+function showAlerta(titulo, mensaje, icono, onClose) {
   document.getElementById('modal-alerta-icon').textContent = icono || '⚠️';
   document.getElementById('modal-alerta-title').textContent = titulo;
   document.getElementById('modal-alerta-msg').textContent = mensaje;
+  var btn = document.getElementById('modal-alerta-btn');
+  if (btn) {
+    btn.onclick = function(ev) {
+      if (ev) ev.stopPropagation();
+      document.getElementById('modal-alerta').style.display = 'none';
+      if (typeof onClose === 'function') onClose();
+    };
+  }
   document.getElementById('modal-alerta').style.display = 'flex';
 }
 
@@ -1588,7 +1598,7 @@ function showAlerta(titulo, mensaje, icono) {
     <div class="modal-alerta-icon" id="modal-alerta-icon">⚠️</div>
     <div class="modal-alerta-title" id="modal-alerta-title">Sin camioneta asignada</div>
     <div class="modal-alerta-msg" id="modal-alerta-msg"></div>
-    <button class="modal-alerta-btn" onclick="document.getElementById('modal-alerta').style.display='none'">Entendido</button>
+    <button class="modal-alerta-btn" id="modal-alerta-btn" onclick="document.getElementById('modal-alerta').style.display='none'">Entendido</button>
   </div>
 </div>
 
