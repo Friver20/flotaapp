@@ -784,8 +784,9 @@ function login() {
   buildPhotos('r-photos', R_PHOTOS, 'r', 'r-photo-cnt', R_PHOTOS.length);
   buildPhotos('e-photos', E_PHOTOS, 'e', 'e-photo-cnt', E_PHOTOS.length);
   var estadoValid = String(d.estadoValidacion || '').trim();
-  validacionPendiente = (estadoValid === 'Pendiente validación');
-  validacionAprobada = (estadoValid === 'Aprobado para operar');
+  var estadoValidNorm = estadoValid.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  validacionPendiente = estadoValidNorm.indexOf('pendiente') !== -1;
+  validacionAprobada = estadoValidNorm.indexOf('aprobado') !== -1 || estadoValidNorm.indexOf('validado') !== -1;
   validacionResponsable = d.responsableValidacion || '';
   validacionLimite = d.fechaLimiteValidacion || '';
 
@@ -805,6 +806,7 @@ function login() {
   }
 
   renderEstadoValidacionHome();
+  if (validacionAprobada || recepcionCompleta) { showTabs(true); }
 }
 
 // ── TABS ────────────────────────────────────────────────────────────
@@ -1442,10 +1444,21 @@ async function enviarFalla() {
 
 // Cargar datos reales al hacer login
 async function cargarDatosReales() {
-  const [flota, conductores] = await Promise.all([
+  const [flota, conductores, desvios] = await Promise.all([
     apiCall("getFlota"),
-    apiCall("getConductores")
+    apiCall("getConductores"),
+    apiCall("getDesvios")
   ]);
+  var aprobadosPorClave = {};
+  if (desvios.ok && desvios.data && desvios.data.length) {
+    desvios.data.forEach(function(d) {
+      var dec = String(d.DecisionValidacion || d.EstadoValidacion || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      var isAprob = dec.indexOf('aprobado') !== -1 || dec.indexOf('validado') !== -1;
+      if (isAprob && d.Patente && d.Conductor) {
+        aprobadosPorClave[String(d.Conductor).trim() + '|' + String(d.Patente).trim()] = true;
+      }
+    });
+  }
   // Poblar selector de conductores
   if (conductores.ok && conductores.data.length > 0) {
     const sel = document.getElementById('sel-conductor');
@@ -1464,7 +1477,7 @@ async function cargarDatosReales() {
             turno: v.TurnoActual || 'Día',
             km: String(v.KmActual || '0'),
             comb: v.Combustible || '—',
-            estadoValidacion: v.EstadoValidacion || '',
+            estadoValidacion: (aprobadosPorClave[String(v.ConductorActual).trim() + '|' + String(v.Patente).trim()] ? 'Aprobado para operar' : (v.EstadoValidacion || '')),
             responsableValidacion: v.ResponsableValidacion || '',
             fechaLimiteValidacion: v.FechaLimiteValidacion || ''
           };
@@ -1493,7 +1506,7 @@ async function cargarDatosReales() {
             turno: v.TurnoActual || "Día",
             km: v.KmActual || "0",
             comb: v.Combustible || "—",
-            estadoValidacion: v.EstadoValidacion || '',
+            estadoValidacion: (aprobadosPorClave[String(v.ConductorActual).trim() + '|' + String(v.Patente).trim()] ? 'Aprobado para operar' : (v.EstadoValidacion || '')),
             responsableValidacion: v.ResponsableValidacion || '',
             fechaLimiteValidacion: v.FechaLimiteValidacion || ''
           };
@@ -1540,6 +1553,11 @@ function iniciarChecklist() {
   var camData = CONDUCTORES[conductor] || {};
   if (validacionPendiente) {
     showAlerta('Vehículo pendiente de validación', 'No se puede operar por el momento hasta la revisión del ' + ((validacionResponsable || 'responsable del turno').toLowerCase()) + '.', '⏳');
+    return false;
+  }
+  if (validacionAprobada || recepcionCompleta) {
+    showAlerta('Recepción ya registrada', 'La recepción original sigue vigente y el vehículo ya fue validado para operar. No debes repetir el checklist; continúa el turno y completa la entrega al finalizar.', '✅');
+    goS('s-home');
     return false;
   }
   if (!camData.plate || camData.plate === '—') {
