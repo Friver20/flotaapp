@@ -1684,6 +1684,68 @@ function showAlerta(titulo, mensaje, icono, onClose) {
   document.getElementById('modal-alerta').style.display = 'flex';
 }
 
+
+/* =========================================================
+   FIX FINAL UX VALIDACIÓN + ENTREGA
+   ========================================================= */
+function _normTxt(v) { return String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(); }
+function _recepKey() { var d = CONDUCTORES[conductor] || {}; return 'flotaapp_recepcion_' + String(conductor || '').trim() + '|' + String(d.plate || '').trim(); }
+function _getRecepcionLocal() { try { var raw = localStorage.getItem(_recepKey()); return raw ? JSON.parse(raw) : null; } catch(e) { return null; } }
+function _setRecepcionLocal(km, comb) { try { var d = CONDUCTORES[conductor] || {}; localStorage.setItem(_recepKey(), JSON.stringify({ kmInicio: km || '', combustibleInicio: comb || '', patente: d.plate || '', conductor: conductor || '', fecha: new Date().toISOString() })); } catch(e) {} }
+function _getKmInicioEntrega() { var d = CONDUCTORES[conductor] || {}; var loc = _getRecepcionLocal() || {}; return d.kmRecepcion || loc.kmInicio || d.km || '—'; }
+function _getCombInicioEntrega() { var d = CONDUCTORES[conductor] || {}; var loc = _getRecepcionLocal() || {}; return d.combRecepcion || loc.combustibleInicio || d.comb || '—'; }
+function aplicarDatosInicioEntrega() {
+  var km = _getKmInicioEntrega(); var comb = _getCombInicioEntrega(); var d = CONDUCTORES[conductor] || {}; var loc = _getRecepcionLocal() || {};
+  if (d && d.plate && d.plate !== '—') { d.kmRecepcion = d.kmRecepcion || loc.kmInicio || ''; d.combRecepcion = d.combRecepcion || loc.combustibleInicio || ''; }
+  safe('e-home-km-inicio', function(el) { el.textContent = km; });
+  safe('e-home-comb-inicio', function(el) { el.textContent = comb; });
+  safe('exito-e-km-inicio', function(el) { el.textContent = km; });
+  return { km: km, comb: comb };
+}
+function pintarTimelineValidado() {
+  safe('tab-recep-badge', function(el) { el.style.display = ''; el.textContent = '✓'; });
+  safe('tab-entrega-badge', function(el) { el.style.display = ''; });
+  safe('tl1', function(el) { el.className = 'tl-circle done'; el.textContent = '✓'; });
+  safe('tl1-lbl', function(el) { el.className = 'tl-label done'; });
+  safe('tl-line1', function(el) { el.classList.add('done'); });
+  safe('tl2', function(el) { el.className = 'tl-circle done'; el.textContent = '✓'; });
+  safe('tl2-lbl', function(el) { el.className = 'tl-label done'; });
+  safe('tl-line2', function(el) { el.classList.add('done'); });
+  safe('tl3', function(el) { el.className = 'tl-circle active-e'; el.textContent = '3'; });
+  safe('tl3-lbl', function(el) { el.className = 'tl-label active-e'; });
+}
+function renderEstadoValidacionHome() {
+  var fallasHome = document.getElementById('fallas-home'); var timelineMsg = document.getElementById('timeline-msg'); var btnRecep = document.getElementById('btn-iniciar-recep');
+  if (!fallasHome || !timelineMsg || !btnRecep) return;
+  if (validacionPendiente) {
+    var respTxt = (validacionResponsable || 'responsable del turno'); var limiteTxt = validacionLimite ? (' · Límite: ' + validacionLimite) : '';
+    fallasHome.innerHTML = '<div class="falla-card card-danger"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:13px;font-weight:600;color:var(--text)">Vehículo pendiente de validación</span><span class="badge badge-warn">Bloqueado</span></div><div style="font-size:12px;color:var(--text2)">No se puede operar por el momento hasta la revisión del ' + respTxt.toLowerCase() + limiteTxt + '.</div></div>';
+    timelineMsg.textContent = 'Vehículo pendiente de validación. No se puede operar por el momento.';
+    btnRecep.textContent = 'Recepción registrada · pendiente validación'; btnRecep.disabled = true; btnRecep.className = 'btn btn-secondary'; btnRecep.style.opacity = '0.65'; btnRecep.style.cursor = 'not-allowed'; return;
+  }
+  var d = CONDUCTORES[conductor] || {}; var loc = _getRecepcionLocal();
+  if (validacionAprobada || recepcionCompleta || d.kmRecepcion || d.combRecepcion || loc) {
+    recepcionCompleta = true; aplicarDatosInicioEntrega(); pintarTimelineValidado(); showTabs(true);
+    fallasHome.innerHTML = '<div class="card card-entrega" style="border-color:rgba(45,212,160,0.35);background:linear-gradient(135deg,var(--bg2) 80%,var(--ok-bg))"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:14px;font-weight:700;color:var(--ok)">Vehículo aprobado para operar</span><span class="badge badge-ok">Validado</span></div><div style="font-size:12px;color:var(--text2);line-height:1.5">La recepción ya registrada sigue vigente. No debes repetir el checklist de recepción. Al finalizar tu turno, completa el checklist de entrega.</div></div>';
+    timelineMsg.textContent = 'Recepción validada. Puedes operar y luego cerrar el turno con checklist de entrega.';
+    btnRecep.textContent = 'Ir al checklist de entrega'; btnRecep.disabled = false; btnRecep.className = 'btn btn-entrega'; btnRecep.style.opacity = '1'; btnRecep.style.cursor = 'pointer'; btnRecep.onclick = function(ev){ return abrirEntregaValidada(ev); }; return;
+  }
+  fallasHome.innerHTML = '<div class="empty">Sin fallas activas registradas</div>'; timelineMsg.textContent = 'Completa el checklist de recepción para iniciar tu turno.';
+  btnRecep.textContent = 'Iniciar checklist de recepción'; btnRecep.disabled = false; btnRecep.className = 'btn btn-recep'; btnRecep.style.opacity = '1'; btnRecep.style.cursor = 'pointer'; btnRecep.onclick = function(ev){ return iniciarChecklist(ev); };
+}
+var _cerrarRecepcionBase = cerrarRecepcion;
+cerrarRecepcion = async function() { var kmEl = document.getElementById('r-km'); var combEl = document.querySelector('#r-fuel-opts .fuel-opt.on'); var kmVal = kmEl ? kmEl.value : ''; var combVal = combEl ? combEl.textContent.trim() : ''; if (kmVal || combVal) _setRecepcionLocal(kmVal, combVal); return await _cerrarRecepcionBase.apply(this, arguments); };
+function iniciarChecklist(ev) {
+  if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+  var camData = CONDUCTORES[conductor] || {};
+  if (validacionPendiente) { showAlerta('Vehículo pendiente de validación', 'No se puede operar por el momento hasta la revisión del ' + ((validacionResponsable || 'responsable del turno').toLowerCase()) + '.', '⏳'); return false; }
+  if (validacionAprobada || recepcionCompleta || camData.kmRecepcion || camData.combRecepcion || _getRecepcionLocal()) { recepcionCompleta = true; return abrirEntregaValidada(ev); }
+  if (!camData.plate || camData.plate === '—') { showAlerta('Sin camioneta asignada', 'No tienes una camioneta asignada. Contacta al supervisor para que coordine la asignación.', '🚗'); return false; }
+  resetChecklistState(); buildDocs(); buildInv(); buildSegActiva(); buildEstadoEntrega(); buildSegActivaEntrega(); buildPhotos('r-photos', R_PHOTOS, 'r', 'r-photo-cnt', R_PHOTOS.length); buildPhotos('e-photos', E_PHOTOS, 'e', 'e-photo-cnt', E_PHOTOS.length); goS('r-paso1'); showTabs(true); return false;
+}
+function abrirEntregaValidada(ev) { if (ev) { ev.preventDefault(); ev.stopPropagation(); } validacionPendiente = false; recepcionCompleta = true; aplicarDatosInicioEntrega(); pintarTimelineValidado(); showTabs(true); var tr = document.getElementById('tab-recep'); var te = document.getElementById('tab-entrega'); if (tr) tr.className = 'mode-tab'; if (te) te.className = 'mode-tab active-entrega'; safe('topbar-title', function(el){ el.textContent = 'Checklist entrega'; }); goS('e-home'); return false; }
+function iniciarEntregaChecklist(ev) { if (ev) { ev.preventDefault(); ev.stopPropagation(); } if (validacionPendiente) { showAlerta('Vehículo pendiente de validación', 'No se puede completar la entrega hasta que el responsable valide la camioneta.', '⏳'); return false; } recepcionCompleta = true; aplicarDatosInicioEntrega(); showTabs(true); var tr = document.getElementById('tab-recep'); var te = document.getElementById('tab-entrega'); if (tr) tr.className = 'mode-tab'; if (te) te.className = 'mode-tab active-entrega'; goS('e-paso1'); return false; }
+window.addEventListener('load', function(){ setTimeout(function(){ try { if (conductor && (validacionAprobada || recepcionCompleta || _getRecepcionLocal())) renderEstadoValidacionHome(); } catch(e) {} }, 800); });
 </script>
 
 <div id="modal-alerta" style="display:none" class="modal-alerta" onclick="this.style.display='none'">
