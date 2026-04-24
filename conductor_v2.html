@@ -792,8 +792,8 @@ function login() {
 
   if (validacionAprobada) {
     recepcionCompleta = true;
-    var kmBase = data.km || '—';
-    var combBase = data.comb || '—';
+    var kmBase = d.kmRecepcion || d.km || '—';
+    var combBase = d.combRecepcion || d.comb || '—';
     safe('e-home-km-inicio', function(el) { el.textContent = kmBase; });
     safe('e-home-comb-inicio', function(el) { el.textContent = combBase; });
     safe('tab-recep-badge', function(el) { el.style.display = ''; });
@@ -1244,7 +1244,7 @@ async function cerrarEntrega() {
   var combEl = document.querySelector('#e-fuel-opts .fuel-opt.on');
   var obsEl = document.querySelector('#e-paso2 .obs-ta');
   var kmFin = kmEl ? kmEl.value : '';
-  var kmInicio = (document.getElementById('r-km') && document.getElementById('r-km').value) ? document.getElementById('r-km').value : (data.km || '');
+  var kmInicio = (document.getElementById('r-km') && document.getElementById('r-km').value) ? document.getElementById('r-km').value : (data.kmRecepcion || data.km || '');
   var combVal = combEl ? combEl.textContent.trim() : '';
   var deptVal = (data.model||'').split('·').slice(-1)[0].trim();
   var recorrido = '';
@@ -1444,10 +1444,11 @@ async function enviarFalla() {
 
 // Cargar datos reales al hacer login
 async function cargarDatosReales() {
-  const [flota, conductores, desvios] = await Promise.all([
+  const [flota, conductores, desvios, actas] = await Promise.all([
     apiCall("getFlota"),
     apiCall("getConductores"),
-    apiCall("getDesvios")
+    apiCall("getDesvios"),
+    apiCall("getActas", {})
   ]);
   var aprobadosPorClave = {};
   if (desvios.ok && desvios.data && desvios.data.length) {
@@ -1456,6 +1457,21 @@ async function cargarDatosReales() {
       var isAprob = dec.indexOf('aprobado') !== -1 || dec.indexOf('validado') !== -1;
       if (isAprob && d.Patente && d.Conductor) {
         aprobadosPorClave[String(d.Conductor).trim() + '|' + String(d.Patente).trim()] = true;
+      }
+    });
+  }
+  var recepcionPorClave = {};
+  if (actas && actas.ok && actas.data && actas.data.length) {
+    actas.data.forEach(function(a) {
+      var tipo = String(a.Tipo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      var pat = String(a.Patente || '').trim();
+      var cond = String(a.ConductorEntrante || a.Conductor || '').trim();
+      if (tipo.indexOf('recepcion') !== -1 && pat && cond) {
+        recepcionPorClave[cond + '|' + pat] = {
+          kmInicio: a.KmInicio || '',
+          combustibleInicio: a.Combustible || '',
+          timestamp: a.Timestamp || ''
+        };
       }
     });
   }
@@ -1479,7 +1495,9 @@ async function cargarDatosReales() {
             comb: v.Combustible || '—',
             estadoValidacion: (aprobadosPorClave[String(v.ConductorActual).trim() + '|' + String(v.Patente).trim()] ? 'Aprobado para operar' : (v.EstadoValidacion || '')),
             responsableValidacion: v.ResponsableValidacion || '',
-            fechaLimiteValidacion: v.FechaLimiteValidacion || ''
+            fechaLimiteValidacion: v.FechaLimiteValidacion || '',
+            kmRecepcion: (recepcionPorClave[String(v.ConductorActual).trim() + '|' + String(v.Patente).trim()] || {}).kmInicio || '',
+            combRecepcion: (recepcionPorClave[String(v.ConductorActual).trim() + '|' + String(v.Patente).trim()] || {}).combustibleInicio || ''
           };
         }
       });
@@ -1508,7 +1526,9 @@ async function cargarDatosReales() {
             comb: v.Combustible || "—",
             estadoValidacion: (aprobadosPorClave[String(v.ConductorActual).trim() + '|' + String(v.Patente).trim()] ? 'Aprobado para operar' : (v.EstadoValidacion || '')),
             responsableValidacion: v.ResponsableValidacion || '',
-            fechaLimiteValidacion: v.FechaLimiteValidacion || ''
+            fechaLimiteValidacion: v.FechaLimiteValidacion || '',
+            kmRecepcion: (recepcionPorClave[String(v.ConductorActual).trim() + '|' + String(v.Patente).trim()] || {}).kmInicio || '',
+            combRecepcion: (recepcionPorClave[String(v.ConductorActual).trim() + '|' + String(v.Patente).trim()] || {}).combustibleInicio || ''
           };
         }
       });
@@ -1558,6 +1578,9 @@ function iniciarChecklist() {
   if (validacionAprobada || recepcionCompleta) {
     showTabs(true);
     showAlerta('Recepción ya registrada', 'La recepción original sigue vigente y el vehículo ya fue validado para operar. No debes repetir el checklist; continúa el turno y completa la entrega al finalizar.', '✅', function(){
+      var d = CONDUCTORES[conductor] || {};
+      safe('e-home-km-inicio', function(el) { el.textContent = d.kmRecepcion || d.km || '—'; });
+      safe('e-home-comb-inicio', function(el) { el.textContent = d.combRecepcion || d.comb || '—'; });
       setTab('entrega');
     });
     return false;
