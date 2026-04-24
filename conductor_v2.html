@@ -790,7 +790,13 @@ function login() {
   validacionResponsable = d.responsableValidacion || '';
   validacionLimite = d.fechaLimiteValidacion || '';
 
-  if (validacionAprobada) {
+  // Si existe una recepción registrada para esta camioneta/conductor, no se debe repetir.
+  // Se habilita la entrega salvo que siga pendiente de validación.
+  if (!validacionPendiente && (d.kmRecepcion || d.combRecepcion || validacionAprobada)) {
+    recepcionCompleta = true;
+  }
+
+  if (validacionAprobada || recepcionCompleta) {
     recepcionCompleta = true;
     var kmBase = d.kmRecepcion || d.km || '—';
     var combBase = d.combRecepcion || d.comb || '—';
@@ -1540,7 +1546,21 @@ async function cargarDatosReales() {
 }
 
 // Llamar al cargar la página
-window.addEventListener('load', cargarDatosReales);
+window.addEventListener('load', function(){
+  cargarDatosReales();
+  var b = document.getElementById('btn-iniciar-recep');
+  if (b) {
+    b.addEventListener('click', function(ev){
+      var d = CONDUCTORES[conductor] || {};
+      if (!validacionPendiente && (validacionAprobada || recepcionCompleta || d.kmRecepcion || d.combRecepcion)) {
+        ev.preventDefault(); ev.stopPropagation();
+        recepcionCompleta = true;
+        abrirEntregaValidada();
+        return false;
+      }
+    }, true);
+  }
+});
 
 
 // Falla photo handler — called when navigating to s-falla
@@ -1578,7 +1598,9 @@ function iniciarChecklist() {
     showAlerta('Vehículo pendiente de validación', 'No se puede operar por el momento hasta la revisión del ' + ((validacionResponsable || 'responsable del turno').toLowerCase()) + '.', '⏳');
     return false;
   }
-  if (validacionAprobada || recepcionCompleta) {
+  if (validacionAprobada || recepcionCompleta || camData.kmRecepcion || camData.combRecepcion) {
+    validacionPendiente = false;
+    recepcionCompleta = true;
     abrirEntregaValidada();
     return false;
   }
@@ -1609,6 +1631,9 @@ function abrirEntregaValidada() {
   if (tr) tr.className = 'mode-tab';
   if (te) te.className = 'mode-tab active-entrega';
   goS('e-home');
+  // Refuerzo visual: asegura que la pantalla entrega quede visible aunque haya quedado un estado anterior.
+  ['s-home','r-paso1','r-paso2','r-paso3','r-paso4'].forEach(function(id){ var el=document.getElementById(id); if(el) el.style.display='none'; });
+  var eh=document.getElementById('e-home'); if(eh) eh.style.display='';
 }
 
 function showAlerta(titulo, mensaje, icono, onClose) {
