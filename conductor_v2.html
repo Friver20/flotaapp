@@ -1746,6 +1746,140 @@ function iniciarChecklist(ev) {
 function abrirEntregaValidada(ev) { if (ev) { ev.preventDefault(); ev.stopPropagation(); } validacionPendiente = false; recepcionCompleta = true; aplicarDatosInicioEntrega(); pintarTimelineValidado(); showTabs(true); var tr = document.getElementById('tab-recep'); var te = document.getElementById('tab-entrega'); if (tr) tr.className = 'mode-tab'; if (te) te.className = 'mode-tab active-entrega'; safe('topbar-title', function(el){ el.textContent = 'Checklist entrega'; }); goS('e-home'); return false; }
 function iniciarEntregaChecklist(ev) { if (ev) { ev.preventDefault(); ev.stopPropagation(); } if (validacionPendiente) { showAlerta('Vehículo pendiente de validación', 'No se puede completar la entrega hasta que el responsable valide la camioneta.', '⏳'); return false; } recepcionCompleta = true; aplicarDatosInicioEntrega(); showTabs(true); var tr = document.getElementById('tab-recep'); var te = document.getElementById('tab-entrega'); if (tr) tr.className = 'mode-tab'; if (te) te.className = 'mode-tab active-entrega'; goS('e-paso1'); return false; }
 window.addEventListener('load', function(){ setTimeout(function(){ try { if (conductor && (validacionAprobada || recepcionCompleta || _getRecepcionLocal())) renderEstadoValidacionHome(); } catch(e) {} }, 800); });
+
+/* =========================================================
+   OVERRIDE FINAL ESTABLE: RECEPCIÓN VALIDADA -> ENTREGA
+   Este bloque pisa funciones anteriores y evita duplicados rotos.
+   ========================================================= */
+(function(){
+  function norm(v){ return String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+  function getD(){ return (typeof CONDUCTORES !== 'undefined' && conductor) ? (CONDUCTORES[conductor] || {}) : {}; }
+  function recepKey(){ var d=getD(); return 'flotaapp_recepcion_' + String(conductor||'').trim() + '|' + String(d.plate||'').trim(); }
+  function getLocalRecep(){ try { var raw=localStorage.getItem(recepKey()); return raw ? JSON.parse(raw) : null; } catch(e){ return null; } }
+  function setLocalRecep(km, comb){ try { var d=getD(); localStorage.setItem(recepKey(), JSON.stringify({kmInicio:km||'', combustibleInicio:comb||'', patente:d.plate||'', conductor:conductor||'', fecha:new Date().toISOString()})); } catch(e){} }
+  function kmInicio(){ var d=getD(), l=getLocalRecep()||{}; return d.kmRecepcion || l.kmInicio || d.km || '—'; }
+  function combInicio(){ var d=getD(), l=getLocalRecep()||{}; return d.combRecepcion || l.combustibleInicio || d.comb || '—'; }
+  function setText(id, txt){ var el=document.getElementById(id); if(el) el.textContent = txt; }
+  function hideAll(){
+    var screens = (typeof ALL_SCREENS !== 'undefined' && ALL_SCREENS && ALL_SCREENS.length) ? ALL_SCREENS : ['s-home','r-paso1','r-paso2','r-paso3','r-paso4','e-home','e-paso1','e-paso2','e-paso3','e-paso4','s-falla','s-historial','s-exito-recep','s-exito-entrega'];
+    screens.forEach(function(id){ var el=document.getElementById(id); if(el) el.style.display='none'; });
+  }
+  function go(id){
+    hideAll();
+    var el=document.getElementById(id);
+    if(el) el.style.display='';
+    var scr=document.getElementById('main-scr'); if(scr) scr.scrollTop=0;
+    var title=document.getElementById('topbar-title');
+    if(title){
+      var titles={'s-home':'Mi camioneta','r-paso1':'Checklist recepción','r-paso2':'Checklist recepción','r-paso3':'Checklist recepción','r-paso4':'Checklist recepción','e-home':'Checklist entrega','e-paso1':'Checklist entrega','e-paso2':'Checklist entrega','e-paso3':'Checklist entrega','e-paso4':'Checklist entrega','s-falla':'Reportar falla','s-historial':'Historial','s-exito-recep':'Recepción lista','s-exito-entrega':'Turno cerrado'};
+      title.textContent = titles[id] || 'FlotaApp';
+    }
+  }
+  function marcarEntrega(){
+    try { showTabs(true); } catch(e){}
+    var tr=document.getElementById('tab-recep'), te=document.getElementById('tab-entrega');
+    if(tr) tr.className='mode-tab';
+    if(te) te.className='mode-tab active-entrega';
+    setText('e-home-km-inicio', kmInicio());
+    setText('e-home-comb-inicio', combInicio());
+    setText('exito-e-km-inicio', kmInicio());
+    ['tab-recep-badge','tab-entrega-badge'].forEach(function(id){ var el=document.getElementById(id); if(el) el.style.display=''; });
+    var t1=document.getElementById('tl1'); if(t1){ t1.className='tl-circle done'; t1.textContent='✓'; }
+    var t1l=document.getElementById('tl1-lbl'); if(t1l) t1l.className='tl-label done';
+    var l1=document.getElementById('tl-line1'); if(l1) l1.classList.add('done');
+    var t2=document.getElementById('tl2'); if(t2){ t2.className='tl-circle done'; t2.textContent='✓'; }
+    var t2l=document.getElementById('tl2-lbl'); if(t2l) t2l.className='tl-label done';
+    var l2=document.getElementById('tl-line2'); if(l2) l2.classList.add('done');
+    var t3=document.getElementById('tl3'); if(t3){ t3.className='tl-circle active-e'; t3.textContent='3'; }
+    var t3l=document.getElementById('tl3-lbl'); if(t3l) t3l.className='tl-label active-e';
+  }
+  function hayRecepcionVigente(){
+    var d=getD();
+    var estado = norm(d.estadoValidacion || '');
+    return !!(validacionAprobada || recepcionCompleta || estado.indexOf('aprobado')!==-1 || estado.indexOf('validado')!==-1 || d.kmRecepcion || d.combRecepcion || getLocalRecep());
+  }
+  window.renderEstadoValidacionHome = function(){
+    var fallasHome=document.getElementById('fallas-home');
+    var timelineMsg=document.getElementById('timeline-msg');
+    var btn=document.getElementById('btn-iniciar-recep');
+    if(!fallasHome || !timelineMsg || !btn) return;
+    if(validacionPendiente){
+      var resp=(validacionResponsable || 'responsable del turno');
+      fallasHome.innerHTML='<div class="falla-card card-danger"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:13px;font-weight:600;color:var(--text)">Vehículo pendiente de validación</span><span class="badge badge-warn">Bloqueado</span></div><div style="font-size:12px;color:var(--text2)">No se puede operar por el momento hasta la revisión del '+resp.toLowerCase()+'.</div></div>';
+      timelineMsg.textContent='Vehículo pendiente de validación. No se puede operar por el momento.';
+      btn.textContent='Recepción registrada · pendiente validación';
+      btn.disabled=true; btn.className='btn btn-secondary'; btn.style.opacity='0.65'; btn.style.cursor='not-allowed'; btn.onclick=function(){return false;};
+      return;
+    }
+    if(hayRecepcionVigente()){
+      recepcionCompleta=true; validacionPendiente=false; marcarEntrega();
+      fallasHome.innerHTML='<div class="card card-entrega" style="border-color:rgba(45,212,160,0.35);background:linear-gradient(135deg,var(--bg2) 80%,var(--ok-bg))"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:14px;font-weight:700;color:var(--ok)">Vehículo aprobado para operar</span><span class="badge badge-ok">Validado</span></div><div style="font-size:12px;color:var(--text2);line-height:1.5">La recepción ya registrada sigue vigente. No debes repetir el checklist de recepción. Al finalizar tu turno, completa el checklist de entrega.</div><div style="font-size:12px;color:var(--text2);margin-top:8px">Km inicial: <b style="color:var(--text)">'+kmInicio()+'</b> · Combustible inicial: <b style="color:var(--text)">'+combInicio()+'</b></div></div>';
+      timelineMsg.textContent='Recepción validada. Puedes operar y luego cerrar el turno con checklist de entrega.';
+      btn.textContent='Ir al checklist de entrega';
+      btn.disabled=false; btn.className='btn btn-entrega'; btn.style.opacity='1'; btn.style.cursor='pointer';
+      btn.onclick=function(ev){ return window.abrirEntregaValidada(ev); };
+      return;
+    }
+    fallasHome.innerHTML='<div class="empty">Sin fallas activas registradas</div>';
+    timelineMsg.textContent='Completa el checklist de recepción para iniciar tu turno.';
+    btn.textContent='Iniciar checklist de recepción';
+    btn.disabled=false; btn.className='btn btn-recep'; btn.style.opacity='1'; btn.style.cursor='pointer';
+    btn.onclick=function(ev){ return window.iniciarChecklist(ev); };
+  };
+  window.abrirEntregaValidada = function(ev){
+    if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+    validacionPendiente=false; recepcionCompleta=true;
+    marcarEntrega();
+    var modal=document.getElementById('modal-alerta'); if(modal) modal.style.display='none';
+    go('e-home');
+    return false;
+  };
+  window.iniciarEntregaChecklist = function(ev){
+    if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+    if(validacionPendiente){
+      try { showAlerta('Vehículo pendiente de validación', 'No se puede completar la entrega hasta que el responsable valide la camioneta.', '⏳'); } catch(e){ alert('Vehículo pendiente de validación'); }
+      return false;
+    }
+    recepcionCompleta=true;
+    marcarEntrega();
+    go('e-paso1');
+    return false;
+  };
+  window.iniciarChecklist = function(ev){
+    if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+    var d=getD();
+    if(validacionPendiente){
+      try { showAlerta('Vehículo pendiente de validación', 'No se puede operar por el momento hasta la revisión del ' + ((validacionResponsable || 'responsable del turno').toLowerCase()) + '.', '⏳'); } catch(e){ alert('Vehículo pendiente de validación'); }
+      return false;
+    }
+    if(hayRecepcionVigente()) return window.abrirEntregaValidada(ev);
+    if(!d.plate || d.plate==='—'){
+      try { showAlerta('Sin camioneta asignada', 'No tienes una camioneta asignada. Contacta al supervisor para que coordine la asignación.', '🚗'); } catch(e){ alert('Sin camioneta asignada'); }
+      return false;
+    }
+    try { resetChecklistState(); buildDocs(); buildInv(); buildSegActiva(); buildEstadoEntrega(); buildSegActivaEntrega(); buildPhotos('r-photos', R_PHOTOS, 'r', 'r-photo-cnt', R_PHOTOS.length); buildPhotos('e-photos', E_PHOTOS, 'e', 'e-photo-cnt', E_PHOTOS.length); showTabs(true); } catch(e){}
+    go('r-paso1');
+    return false;
+  };
+  var _cerrarRecepcionFinalBase = window.cerrarRecepcion;
+  if (typeof _cerrarRecepcionFinalBase === 'function') {
+    window.cerrarRecepcion = async function(){
+      var kmEl=document.getElementById('r-km');
+      var combEl=document.querySelector('#r-fuel-opts .fuel-opt.on');
+      setLocalRecep(kmEl ? kmEl.value : '', combEl ? combEl.textContent.trim() : '');
+      return await _cerrarRecepcionFinalBase.apply(this, arguments);
+    };
+  }
+  function bindFinal(){
+    var b=document.getElementById('btn-iniciar-recep'); if(b) b.onclick=function(ev){ return window.iniciarChecklist(ev); };
+    var be=document.getElementById('btn-iniciar-entrega'); if(be) be.onclick=function(ev){ return window.iniciarEntregaChecklist(ev); };
+    try { if(conductor) window.renderEstadoValidacionHome(); } catch(e){}
+  }
+  window.addEventListener('load', function(){ setTimeout(bindFinal, 300); setTimeout(bindFinal, 1200); });
+  document.addEventListener('DOMContentLoaded', function(){ setTimeout(bindFinal, 300); });
+})();
+
+
 </script>
 
 <div id="modal-alerta" style="display:none" class="modal-alerta" onclick="this.style.display='none'">
