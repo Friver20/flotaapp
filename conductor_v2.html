@@ -632,7 +632,7 @@
           <div id="exito-e-alerta" style="display:none;background:var(--danger-bg);border:1px solid rgba(242,92,92,0.3);border-radius:var(--radius);padding:12px 16px;width:100%;font-size:13px;color:var(--danger)">
             Se detectaron desvíos al cierre. El mecánico y/o supervisor fueron notificados.
           </div>
-          <button class="btn btn-secondary" onclick="goS('s-home');showTabs(false);setTab('recep')" style="width:100%">Volver al inicio</button>
+          <button class="btn btn-secondary" onclick="finalizarEntregaLocal()" style="width:100%">Volver al inicio</button>
         </div>
       </div>
 
@@ -1303,6 +1303,7 @@ async function cerrarEntrega() {
   document.getElementById('tl3-lbl').className = 'tl-label active-e';
   document.getElementById('tl-line2').classList.add('done');
   mostrarGuardando(actaRes && actaRes.ok ? 'Entrega guardada' : 'Error: ' + ((actaRes && actaRes.error) || 'No se pudo guardar'));
+  if (actaRes && actaRes.ok) { try { var k1 = 'recepcion_' + conductor + '_' + (data.plate || ''); var k2 = 'recep_' + conductor + '_' + (data.plate || ''); localStorage.removeItem(k1); localStorage.removeItem(k2); } catch(e) {} }
   goS('s-exito-entrega');
 }
 
@@ -1949,6 +1950,40 @@ window.addEventListener('load', function(){ setTimeout(function(){ try { if (con
   window.addEventListener('load', function(){ setTimeout(bind, 600); setTimeout(bind, 1500); });
   document.addEventListener('DOMContentLoaded', function(){ setTimeout(bind, 600); });
 })();
+
+
+// ── CIERRE REAL DE TURNO ───────────────────────────────────────────
+// Después de cerrar entrega, no debe volver a mostrar la recepción vigente.
+// Se limpia estado local y se recarga para leer Flota actualizada desde Sheets.
+function finalizarEntregaLocal() {
+  try {
+    var d = (typeof CONDUCTORES !== 'undefined' && conductor && CONDUCTORES[conductor]) ? CONDUCTORES[conductor] : {};
+    var keys = [];
+    if (d && d.plate) keys.push('recepcion_' + conductor + '_' + d.plate);
+    if (d && d.plate) keys.push('recep_' + conductor + '_' + d.plate);
+    keys.forEach(function(k){ try { localStorage.removeItem(k); } catch(e){} });
+    if (conductor && CONDUCTORES && CONDUCTORES[conductor]) {
+      CONDUCTORES[conductor] = {
+        plate: '—',
+        model: 'Turno cerrado · Sin camioneta asignada',
+        turno: '—',
+        km: '—',
+        comb: '—',
+        estadoValidacion: '',
+        responsableValidacion: '',
+        fechaLimiteValidacion: '',
+        kmRecepcion: '',
+        combRecepcion: ''
+      };
+    }
+    recepcionCompleta = false;
+    validacionAprobada = false;
+    validacionPendiente = false;
+  } catch(e) {}
+  // Recarga forzada: trae desde Google Sheets que la camioneta ya fue entregada y liberada.
+  window.location.reload();
+}
+
 </script>
 
 <div id="modal-alerta" style="display:none" class="modal-alerta" onclick="this.style.display='none'">
